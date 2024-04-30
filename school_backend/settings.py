@@ -38,9 +38,9 @@ else:
     DEBUG = False
 
 if ENVIRONMENT == "production" or POSTGRES_LOCALLY == True:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1',]
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'bdmos.onrender.com']
     CSRF_TRUSTED_ORIGINS = [
-        'https://crest-backend.onrender.com/', 'https://crestbackend.up.railway.app/',]
+        'https://bdmos.onrender.com/',]
 else:
     ALLOWED_HOSTS = ["*"]
 
