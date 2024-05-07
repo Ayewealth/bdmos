@@ -37,7 +37,8 @@ class Class(models.Model):
     ]
 
     name = models.CharField(max_length=50, choices=CLASS_CHOICES)
-    subjects = models.ManyToManyField(Subject, related_name='classes')
+    subjects = models.ManyToManyField(
+        Subject, blank=True, related_name='classes')
 
     class Meta:
         verbose_name_plural = "Class"
