@@ -89,7 +89,8 @@ class Student(User):
     father_name = models.CharField(max_length=255, blank=True, null=True)
     mother_name = models.CharField(max_length=255, blank=True, null=True)
     gurdian_name = models.CharField(max_length=255, blank=True, null=True)
-    parents_phone_number = models.IntegerField(blank=True, null=True)
+    parents_phone_number = models.CharField(
+        max_length=11, blank=True, null=True)
     parents_email = models.EmailField(blank=True, null=True)
 
     state_of_origin = models.CharField(max_length=100, blank=True, null=True)
