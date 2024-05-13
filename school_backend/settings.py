@@ -183,7 +183,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
-    "https://bdoms.vercel.app"
+    "https://bdoms.vercel.app",
+    "https://bdoms-frontend.vercel.app"
 ]
 
 SIMPLE_JWT = {
