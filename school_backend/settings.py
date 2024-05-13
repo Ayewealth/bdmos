@@ -184,7 +184,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
     "https://bdoms.vercel.app",
-    "https://bdoms-frontend.vercel.app"
+    "https://bdmos-frontend.vercel.app"
 ]
 
 SIMPLE_JWT = {
