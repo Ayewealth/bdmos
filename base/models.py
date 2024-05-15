@@ -170,19 +170,19 @@ class Teacher(User):
     computer_skills = models.CharField(
         max_length=20,  blank=True, null=True, choices=COMPUTER_SKILLS)
     disability_note = models.TextField(null=True, blank=True)
-    passport = models.ImageField(upload_to="teachers_passport", null=True)
-    cv = models.ImageField(upload_to="cv's", null=True)
-    flsc = models.ImageField(
+    passport = models.FileField(upload_to="teachers_passport", null=True)
+    cv = models.FileField(upload_to="cv's", null=True)
+    flsc = models.FileField(
         upload_to="teacher_documents", null=True)
-    waec_neco_nabteb_gce = models.ImageField(
+    waec_neco_nabteb_gce = models.FileField(
         upload_to="teacher_documents", null=True)
-    secondary_school_transcript = models.ImageField(
+    secondary_school_transcript = models.FileField(
         upload_to="teacher_documents", null=True)
-    university_polytech_institution_cer = models.ImageField(
+    university_polytech_institution_cer = models.FileField(
         upload_to="teacher_documents", null=True)
-    university_polytech_institution_cer_trans = models.ImageField(
+    university_polytech_institution_cer_trans = models.FileField(
         upload_to="teacher_documents", null=True)
-    other_certificate = models.ImageField(
+    other_certificate = models.FileField(
         upload_to="other_certificate", null=True)
 
     teacher_speech = models.TextField(null=True, blank=True)
