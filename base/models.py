@@ -170,7 +170,7 @@ class Teacher(User):
     computer_skills = models.CharField(
         max_length=20,  blank=True, null=True, choices=COMPUTER_SKILLS)
     disability_note = models.TextField(null=True, blank=True)
-    passport = models.FileField(upload_to="teachers_passport", null=True)
+    passport = models.ImageField(upload_to="teachers_passport", null=True)
     cv = models.FileField(upload_to="cv's", null=True)
     flsc = models.FileField(
         upload_to="teacher_documents", null=True)
