@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework import generics
 from rest_framework_simplejwt.views import TokenObtainPairView  # type: ignore
 from rest_framework import filters
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from .models import *
 from .serializers import *
@@ -41,6 +42,7 @@ class UserListCreateApiView(generics.ListCreateAPIView):
 class StudentListCreateApiView(generics.ListCreateAPIView):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
+    # permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [filters.SearchFilter]
     search_fields = ['username', 'first_name', "parents_phone_number"]
 
@@ -60,11 +62,13 @@ class StudentRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView)
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
     lookup_field = 'username'
+    permission_classes = [IsAuthenticated]
 
 
 class TeacherListCreateApiView(generics.ListCreateAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
+    # permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [filters.SearchFilter]
     search_fields = ['username', 'first_name', "phone_number"]
 
@@ -82,6 +86,7 @@ class TeacherRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView)
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
     lookup_field = 'username'
+    permission_classes = [IsAuthenticated]
 
 
 class TermListCreateApiView(generics.ListCreateAPIView):
@@ -102,6 +107,7 @@ class SubjectListCreateApiView(generics.ListCreateAPIView):
 class ClassListCreateApiView(generics.ListCreateAPIView):
     queryset = Class.objects.all()
     serializer_class = ClassSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
 
 class EventListCreateApiView(generics.ListCreateAPIView):
@@ -122,6 +128,7 @@ class SchoolPhotosListCreateApiView(generics.ListCreateAPIView):
 class ItemsListCreateApiView(generics.ListCreateAPIView):
     queryset = Items.objects.all()
     serializer_class = ItemsSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class ItemsRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
