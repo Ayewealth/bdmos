@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import generics
 from rest_framework_simplejwt.views import TokenObtainPairView  # type: ignore
+from rest_framework import filters
 
 from .models import *
 from .serializers import *
@@ -40,6 +41,8 @@ class UserListCreateApiView(generics.ListCreateAPIView):
 class StudentListCreateApiView(generics.ListCreateAPIView):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['username', 'first_name', "parents_phone_number"]
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -62,6 +65,8 @@ class StudentRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView)
 class TeacherListCreateApiView(generics.ListCreateAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['username', 'first_name', "phone_number"]
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -71,7 +76,6 @@ class TeacherListCreateApiView(generics.ListCreateAPIView):
         print("Generated Username:", generated_username)
 
         return instance
-    
 
 
 class TeacherRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):

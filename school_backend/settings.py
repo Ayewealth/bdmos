@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
     "corsheaders",
+    "django_filters",
 
     # app
     'base',
@@ -138,7 +139,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }
 
 
@@ -165,6 +167,7 @@ MEDIA_URL = '/media/'
 
 if ENVIRONMENT == 'production' or POSTGRES_LOCALLY == True:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    RAW_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
 else:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'static/media')
 

@@ -4,6 +4,7 @@ from django.contrib.auth.models import Group as AuthGroup, Permission as AuthPer
 from django.utils import timezone
 import random
 import uuid
+from cloudinary_storage.storage import RawMediaCloudinaryStorage
 
 # Create your models here.
 
@@ -111,7 +112,7 @@ class Student(User):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            generated_username = self.first_name.lower() + str(random.randint(1000, 9999))
+            generated_username = f"sbh{self.first_name.lower()[0:3] + str(random.randint(1000, 9999))}"
             last_name_initial = self.last_name.lower()[
                 0] if self.last_name else ""
             generated_password = self.first_name.lower() + last_name_initial + \
@@ -171,19 +172,20 @@ class Teacher(User):
         max_length=20,  blank=True, null=True, choices=COMPUTER_SKILLS)
     disability_note = models.TextField(null=True, blank=True)
     passport = models.ImageField(upload_to="teachers_passport", null=True)
-    cv = models.FileField(upload_to="cv's", null=True)
+    cv = models.FileField(upload_to="cv's", null=True,
+                          storage=RawMediaCloudinaryStorage())
     flsc = models.FileField(
-        upload_to="teacher_documents", null=True)
+        upload_to="teacher_documents", null=True, storage=RawMediaCloudinaryStorage())
     waec_neco_nabteb_gce = models.FileField(
-        upload_to="teacher_documents", null=True)
+        upload_to="teacher_documents", null=True, storage=RawMediaCloudinaryStorage())
     secondary_school_transcript = models.FileField(
-        upload_to="teacher_documents", null=True)
+        upload_to="teacher_documents", null=True, storage=RawMediaCloudinaryStorage())
     university_polytech_institution_cer = models.FileField(
-        upload_to="teacher_documents", null=True)
+        upload_to="teacher_documents", null=True, storage=RawMediaCloudinaryStorage())
     university_polytech_institution_cer_trans = models.FileField(
-        upload_to="teacher_documents", null=True)
+        upload_to="teacher_documents", null=True, storage=RawMediaCloudinaryStorage())
     other_certificate = models.FileField(
-        upload_to="other_certificate", null=True)
+        upload_to="other_certificate", null=True, storage=RawMediaCloudinaryStorage())
 
     teacher_speech = models.TextField(null=True, blank=True)
 
@@ -192,7 +194,7 @@ class Teacher(User):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            generated_username = self.first_name.lower() + str(random.randint(1000, 9999))
+            generated_username = f"fme{self.first_name.lower()[0:3] + str(random.randint(1000, 9999))}"
 
             self.role = User.Role.TEACHER
             self._generated_username = generated_username
