@@ -156,9 +156,28 @@ class TeacherRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView)
     permission_classes = [IsAuthenticated]
 
 
+class ParentsListCreateApiView(generics.ListCreateAPIView):
+    queryset = Parents.objects.all()
+    serializer_class = ParentsSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
+
+
+class ParentsRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Parents.objects.all()
+    serializer_class = ParentsSerializer
+    lookup_field = 'pk'
+
+
 class TermListCreateApiView(generics.ListCreateAPIView):
     queryset = Term.objects.all()
     serializer_class = TermSerializer
+
+
+class TermRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Term.objects.all()
+    serializer_class = TermSerializer
+    lookup_field = "pk"
 
 
 class SessionListCreateApiView(generics.ListCreateAPIView):
@@ -168,11 +187,23 @@ class SessionListCreateApiView(generics.ListCreateAPIView):
     search_fields = ['name']
 
 
+class SessionRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Session.objects.all()
+    serializer_class = SessionSerializer
+    lookup_field = "pk"
+
+
 class SubjectListCreateApiView(generics.ListCreateAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
+
+
+class SubjectRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+    lookup_field = "pk"
 
 
 class ClassListCreateApiView(generics.ListCreateAPIView):
@@ -183,11 +214,23 @@ class ClassListCreateApiView(generics.ListCreateAPIView):
     search_fields = ['name']
 
 
+class ClassRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Class.objects.all()
+    serializer_class = ClassSerializer
+    lookup_field = "name"
+
+
 class EventListCreateApiView(generics.ListCreateAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['date', 'description']
+
+
+class EventRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    lookup_field = "pk"
 
 
 class NotificationListCreateApiView(generics.ListCreateAPIView):
@@ -197,11 +240,23 @@ class NotificationListCreateApiView(generics.ListCreateAPIView):
     search_fields = ['teacher_name', 'date']
 
 
+class NotificationRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    lookup_field = "pk"
+
+
 class SchoolPhotosListCreateApiView(generics.ListCreateAPIView):
     queryset = SchoolPhotos.objects.all()
     serializer_class = SchoolPhotosSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['date']
+
+
+class SchoolPhotosRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SchoolPhotos.objects.all()
+    serializer_class = SchoolPhotosSerializer
+    lookup_field = "pk"
 
 
 class ItemsListCreateApiView(generics.ListCreateAPIView):
@@ -223,12 +278,24 @@ class SchemeListCreateApiView(generics.ListCreateAPIView):
     serializer_class = SchemeSerializer
 
 
+class SchemeRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Scheme.objects.all()
+    serializer_class = SchemeSerializer
+    lookup_field = "pk"
+
+
 class ResultListCreateApiView(generics.ListCreateAPIView):
     queryset = Result.objects.all()
     serializer_class = ResultSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['term', 'session']
     search_fields = ['student__username']
+
+
+class ResultRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Result.objects.all()
+    serializer_class = ResultSerializer
+    lookup_field = "pk"
 
 
 class SubjectResultListCreateApiView(generics.ListCreateAPIView):
@@ -239,6 +306,12 @@ class SubjectResultListCreateApiView(generics.ListCreateAPIView):
         if isinstance(data := kwargs.get("data", {}), list):
             kwargs["many"] = True
         return super().get_serializer(*args, **kwargs)
+
+
+class SubjectResultRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SubjectResult.objects.all()
+    serializer_class = SubjectResultSerializer
+    lookup_field = "pk"
 
 
 class SendEmailApiView(generics.ListCreateAPIView):

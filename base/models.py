@@ -209,6 +209,19 @@ class Teacher(User):
         return False
 
 
+class Parents(models.Model):
+    name = models.CharField(max_length=255, null=True, blank=True)
+    phone_number = models.CharField(max_length=15, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    image = models.ImageField(
+        upload_to="parents_images", null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    children_name = models.ManyToManyField(Student, related_name="Students")
+
+    def __str__(self):
+        return self.name
+
+
 class Items(models.Model):
     image = models.ImageField(upload_to="images", null=True)
     title = models.CharField(max_length=30, null=True, blank=True)

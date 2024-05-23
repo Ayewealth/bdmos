@@ -114,6 +114,20 @@ class TeacherSerializer(serializers.ModelSerializer):
         return DateFormat(obj.date_joined).format('F j, Y')
 
 
+class ParentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Parents
+        fields = [
+            'id',
+            'name',
+            'phone_number',
+            'email',
+            'image',
+            'address',
+            'children_name'
+        ]
+
+
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
