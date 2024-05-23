@@ -183,6 +183,17 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+if ENVIRONMENT == "production" or POSTGRES_LOCALLY == True:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_HOST_USER = env('EMAIL_ADDRESS')
+    EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",

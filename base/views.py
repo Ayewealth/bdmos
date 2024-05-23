@@ -1,3 +1,5 @@
+from rest_framework.views import APIView
+from .models import Student, Teacher
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -5,6 +7,11 @@ from rest_framework import generics
 from rest_framework_simplejwt.views import TokenObtainPairView  # type: ignore
 from rest_framework import filters
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django_filters.rest_framework import DjangoFilterBackend
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.conf import settings
+from .utils import send_single_email, send_bulk_email
+from rest_framework import status
 
 from .models import *
 from .serializers import *
@@ -26,6 +33,11 @@ def endpoints(request):
         "notifications/",
         "school_photos/",
         "items/",
+        "scheme/",
+        "result/",
+        "subject_result/",
+        "send-email/",
+        "list-emails/<str:email_type>/"
     ]
     return Response(data)
 
@@ -44,16 +56,71 @@ class StudentListCreateApiView(generics.ListCreateAPIView):
     serializer_class = StudentSerializer
     # permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['username', 'first_name', "parents_phone_number"]
+    search_fields = ['username', 'first_name', "student_class__name"]
 
     def perform_create(self, serializer):
         instance = serializer.save()
 
         generated_username = serializer.data.get('username')
         generated_password = instance._generated_password
+        parents_email = instance.parents_email
+        gurdian_name = instance.gurdian_name
 
         print("Generated Username:", generated_username)
         print("Generated Password:", generated_password)
+
+        if parents_email:
+            subject = 'Welcome to BDMOS! Access Your Child\'s Portal with These Credentials.'
+            from_email = settings.DEFAULT_FROM_EMAIL
+            to_email = parents_email
+
+            # Plain text content
+            text_content = f"""
+                                Dear {gurdian_name},
+
+                                We are delighted to welcome you and your child to BDMOS. Our heartfelt gratitude goes out to you for entrusting us with your child's education and well-being.
+
+                                To help you stay informed about your child's academic progress and school activities, we have created a dedicated portal for parents. Below are the login credentials you will need to access your child's portal:
+
+                                Username: {generated_username}
+                                Password: {generated_password}
+
+                                Please use these credentials to log in at https://bdmos-frontend.vercel.app/. Should you have any questions or require assistance, do not hesitate to reach out to us.
+
+                                Thank you once again for being a valued part of our school community. We look forward to a successful and enriching school year ahead.
+
+                                Warm regards,
+                            """
+
+            # HTML content
+            html_content = f"""
+                                <html>
+                                    <body>
+                                        <p>Dear {gurdian_name},</p>
+
+                                        <p>We are delighted to welcome you and your child to BDMOS. Our heartfelt gratitude goes out to you for entrusting us with your child's education and well-being.</p>
+
+                                        <p>To help you stay informed about your child's academic progress and school activities, we have created a dedicated portal for parents. Below are the login credentials you will need to access your child's portal:</p>
+
+                                        <p><strong>Username:</strong> {generated_username}<br>
+                                        <strong>Password:</strong> {generated_password}</p>
+
+                                        <p>Please use these credentials to log in at <a href="https://bdmos-frontend.vercel.app/">this portal link</a>. Should you have any questions or require assistance, do not hesitate to reach out to us.</p>
+
+                                        <p>Thank you once again for being a valued part of our school community. We look forward to a successful and enriching school year ahead.</p>
+
+                                        <p>Warm regards,</p>
+                                    </body>
+                                </html>
+                             """
+
+            # Create the email
+            msg = EmailMultiAlternatives(
+                subject, text_content, from_email, [to_email])
+            msg.attach_alternative(html_content, "text/html")
+
+            # Send the email
+            msg.send()
 
         return instance
 
@@ -97,37 +164,51 @@ class TermListCreateApiView(generics.ListCreateAPIView):
 class SessionListCreateApiView(generics.ListCreateAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
 
 
 class SubjectListCreateApiView(generics.ListCreateAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
 
 
 class ClassListCreateApiView(generics.ListCreateAPIView):
     queryset = Class.objects.all()
     serializer_class = ClassSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
 
 
 class EventListCreateApiView(generics.ListCreateAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['date', 'description']
 
 
 class NotificationListCreateApiView(generics.ListCreateAPIView):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['teacher_name', 'date']
 
 
 class SchoolPhotosListCreateApiView(generics.ListCreateAPIView):
     queryset = SchoolPhotos.objects.all()
     serializer_class = SchoolPhotosSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['date']
 
 
 class ItemsListCreateApiView(generics.ListCreateAPIView):
     queryset = Items.objects.all()
     serializer_class = ItemsSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'price']
     permission_classes = [IsAuthenticated]
 
 
@@ -145,6 +226,9 @@ class SchemeListCreateApiView(generics.ListCreateAPIView):
 class ResultListCreateApiView(generics.ListCreateAPIView):
     queryset = Result.objects.all()
     serializer_class = ResultSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['term', 'session']
+    search_fields = ['student__username']
 
 
 class SubjectResultListCreateApiView(generics.ListCreateAPIView):
@@ -155,3 +239,44 @@ class SubjectResultListCreateApiView(generics.ListCreateAPIView):
         if isinstance(data := kwargs.get("data", {}), list):
             kwargs["many"] = True
         return super().get_serializer(*args, **kwargs)
+
+
+class SendEmailApiView(generics.ListCreateAPIView):
+    queryset = Email.objects.all()
+    serializer_class = EmailSerializer
+
+    def post(self, request, *args, **kwargs):
+        to_email = request.data.get('to')
+        subject = request.data.get('subject')
+        body = request.data.get('body')
+        is_bulk = request.data.get('is_bulk', False)
+
+        if is_bulk:
+            if not isinstance(to_email, list):
+                return Response({"error": "For bulk emails, 'to' should be a list of email addresses."}, status=status.HTTP_400_BAD_REQUEST)
+            success = send_bulk_email(to_email, subject, body)
+        else:
+            if not isinstance(to_email, str):
+                return Response({"error": "For single email, 'to' should be a single email address."}, status=status.HTTP_400_BAD_REQUEST)
+            success = send_single_email(to_email, subject, body)
+
+        if success:
+            return Response({"message": "Email(s) sent successfully."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to send email(s)."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ListEmailAddressesAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        email_type = self.kwargs.get('email_type')
+
+        if email_type == 'parents':
+            email_addresses = Student.objects.exclude(parents_email__isnull=True).exclude(
+                parents_email__exact='').values_list('parents_email', flat=True)
+        elif email_type == 'teachers':
+            email_addresses = Teacher.objects.exclude(teacher_email__isnull=True).exclude(
+                teacher_email__exact='').values_list('teacher_email', flat=True)
+        else:
+            return Response({"error": "Invalid email type."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"email_addresses": list(email_addresses)}, status=status.HTTP_200_OK)

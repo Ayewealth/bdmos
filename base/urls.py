@@ -40,4 +40,8 @@ urlpatterns = [
     path("result/", views.ResultListCreateApiView.as_view(), name="result"),
     path("subject_result/",
          views.SubjectResultListCreateApiView.as_view(), name="subject_result"),
+
+    path("send-email/", views.SendEmailApiView.as_view(), name="send-email"),
+    path('list-emails/<str:email_type>/',
+         views.ListEmailAddressesAPIView.as_view(), name='list-emails'),
 ]

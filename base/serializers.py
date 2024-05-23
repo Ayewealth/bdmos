@@ -1,3 +1,4 @@
+from .models import Email
 from rest_framework import serializers
 from django.utils.dateformat import DateFormat
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer  # type: ignore
@@ -280,3 +281,9 @@ class ResultSerializer(serializers.ModelSerializer):
             subject_result.save()
 
         return instance
+
+
+class EmailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Email
+        fields = ['to', 'subject', 'body', 'date']

@@ -283,7 +283,8 @@ class Scheme(models.Model):
     date = models.DateField(null=True, blank=True)
     subject = models.ForeignKey(
         Subject, on_delete=models.CASCADE, null=True, blank=True)
-    scheme = models.FileField()
+    scheme = models.FileField(
+        upload_to='scheme', storage=RawMediaCloudinaryStorage())
 
     def __str__(self):
         return f"{self.subject} scheme"
@@ -320,3 +321,13 @@ class SubjectResult(models.Model):
 
     def __str__(self):
         return f"{self.result.student} - {self.subject} - Result"
+
+
+class Email(models.Model):
+    to = models.EmailField(blank=True, null=True)
+    subject = models.CharField(max_length=500, null=True, blank=True)
+    body = models.TextField(null=True, blank=True)
+    date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Email to {self.to}"
