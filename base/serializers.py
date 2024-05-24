@@ -245,8 +245,41 @@ class ResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Result
-        fields = ['id', 'student', 'student_class',
-                  'term', 'session', 'subject_results']
+        fields = [
+            'id',
+            'student',
+            'student_class',
+            'term',
+            'session',
+            'sex',
+            "total_marks_obtain",
+            'student_average',
+            'class_average',
+            'students',
+            'position',
+            'decision',
+            'agility',
+            'caring',
+            'communication',
+            'loving',
+            'puntuality',
+            'seriousness',
+            'socialization',
+            'attentiveness',
+            'handling_of_tools',
+            'honesty',
+            'leadership',
+            'music',
+            'neatness',
+            'perserverance',
+            'politeness',
+            'tools',
+            'teacher_comment',
+            'principal_comment',
+            'next_term_begins',
+            'next_term_school_fees',
+            'subject_results',
+        ]
 
     def get_subject_results(self, obj):
         subject_results = SubjectResult.objects.filter(result=obj)

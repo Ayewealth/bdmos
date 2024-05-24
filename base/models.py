@@ -218,6 +218,9 @@ class Parents(models.Model):
     address = models.TextField(null=True, blank=True)
     children_name = models.ManyToManyField(Student, related_name="Students")
 
+    class Meta:
+        verbose_name_plural = "Parents"
+
     def __str__(self):
         return self.name
 
@@ -308,6 +311,34 @@ class Result(models.Model):
     student_class = models.ForeignKey(Class, on_delete=models.CASCADE)
     term = models.ForeignKey(Term, on_delete=models.CASCADE)
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    sex = models.CharField(max_length=10, null=True, blank=True)
+    total_marks_obtain = models.CharField(max_length=20, null=True, blank=True)
+    student_average = models.CharField(max_length=20, null=True, blank=True)
+    class_average = models.CharField(max_length=20, null=True, blank=True)
+    students = models.CharField(max_length=20, null=True, blank=True)
+    position = models.CharField(max_length=20, null=True, blank=True)
+    decision = models.CharField(max_length=20, null=True, blank=True)
+    agility = models.CharField(max_length=20, null=True, blank=True)
+    caring = models.CharField(max_length=20, null=True, blank=True)
+    communication = models.CharField(max_length=20, null=True, blank=True)
+    loving = models.CharField(max_length=20, null=True, blank=True)
+    puntuality = models.CharField(max_length=20, null=True, blank=True)
+    seriousness = models.CharField(max_length=20, null=True, blank=True)
+    socialization = models.CharField(max_length=20, null=True, blank=True)
+    attentiveness = models.CharField(max_length=20, null=True, blank=True)
+    handling_of_tools = models.CharField(max_length=20, null=True, blank=True)
+    honesty = models.CharField(max_length=20, null=True, blank=True)
+    leadership = models.CharField(max_length=20, null=True, blank=True)
+    music = models.CharField(max_length=20, null=True, blank=True)
+    neatness = models.CharField(max_length=20, null=True, blank=True)
+    perserverance = models.CharField(max_length=20, null=True, blank=True)
+    politeness = models.CharField(max_length=20, null=True, blank=True)
+    tools = models.CharField(max_length=20, null=True, blank=True)
+    teacher_comment = models.TextField(null=True, blank=True)
+    principal_comment = models.TextField(null=True, blank=True)
+    next_term_begins = models.DateField(null=True, blank=True)
+    next_term_school_fees = models.CharField(
+        max_length=255, null=True, blank=True)
     subjects = models.ManyToManyField(Subject, through='SubjectResult')
 
     class Meta:
