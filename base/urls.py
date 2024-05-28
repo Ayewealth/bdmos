@@ -42,7 +42,7 @@ urlpatterns = [
          views.SubjectRetrieveUpdateDestroyApiView.as_view(), name="subjects-details"),
 
     path("class/", views.ClassListCreateApiView.as_view(), name="classes"),
-    path("class/<str:name>/",
+    path("class/<str:pk>/",
          views.ClassRetrieveUpdateDestroyApiView.as_view(), name="classes-details"),
 
     path("events/", views.EventListCreateApiView.as_view(), name="events"),

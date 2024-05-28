@@ -139,13 +139,22 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class ClassSerializer(serializers.ModelSerializer):
+    all_subjects = serializers.SerializerMethodField()
+
     class Meta:
         model = Class
         fields = [
             'id',
             'name',
-            'subjects'
+            'subjects',
+            'all_subjects'
         ]
+
+    def get_all_subjects(self, obj):
+        subjects = obj.subjects.all()
+        serializer = SubjectSerializer(
+            instance=subjects, many=True)
+        return serializer.data
 
 
 class ItemsSerializer(serializers.ModelSerializer):

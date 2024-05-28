@@ -21,23 +21,7 @@ class Subject(models.Model):
 
 
 class Class(models.Model):
-    CLASS_CHOICES = [
-        ('Learning Development Class', 'Learning Development Class'),
-        ('Nursery 1', 'Nursery 1'),
-        ('Nursery 2', 'Nursery 2'),
-        ('Nursery 3', 'Nursery 3'),
-        ('Primary 1', 'Primary 1'),
-        ('Primary 2', 'Primary 2'),
-        ('Primary 3', 'Primary 3'),
-        ('Primary 4', 'Primary 4'),
-        ('Primary 5', 'Primary 5'),
-        ('Primary 6', 'Primary 6'),
-        ('Primary 7', 'Primary 7'),
-        ('Primary 8', 'Primary 8'),
-        ('Primary 9', 'Primary 9'),
-    ]
-
-    name = models.CharField(max_length=50, choices=CLASS_CHOICES)
+    name = models.CharField(max_length=50, null=True, blank=True)
     subjects = models.ManyToManyField(
         Subject, blank=True, related_name='classes')
 
@@ -300,7 +284,7 @@ class Scheme(models.Model):
     subject = models.ForeignKey(
         Subject, on_delete=models.CASCADE, null=True, blank=True)
     scheme = models.FileField(
-        upload_to='scheme', storage=RawMediaCloudinaryStorage())
+        upload_to='scheme', storage=RawMediaCloudinaryStorage(), null=True, blank=True)
 
     def __str__(self):
         return f"{self.subject} scheme"
