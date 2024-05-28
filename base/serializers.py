@@ -190,15 +190,34 @@ class SchoolPhotosSerializer(serializers.ModelSerializer):
         ]
 
 
+class NotificationTeacherSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Teacher
+        fields = [
+            'first_name',
+            'middle_name',
+            'last_name'
+        ]
+
+
 class NotificationSerializer(serializers.ModelSerializer):
+    teachers_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Notification
         fields = [
             'id',
             'teacher_name',
+            'teachers_name',
             'date',
             'message'
         ]
+
+    def get_teachers_name(self, obj):
+        teacher = obj.teacher_name
+        serializer = NotificationTeacherSerializer(
+            instance=teacher, many=False)
+        return serializer.data
 
 
 class TermSerializer(serializers.ModelSerializer):
