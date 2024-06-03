@@ -56,7 +56,7 @@ class StudentListCreateApiView(generics.ListCreateAPIView):
     serializer_class = StudentSerializer
     # permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['username', 'first_name', "student_class__name"]
+    search_fields = ['username', 'first_name', "student_class"]
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -355,10 +355,10 @@ class ListEmailAddressesAPIView(APIView):
 
         if email_type == 'parents':
             email_addresses = Student.objects.exclude(parents_email__isnull=True).exclude(
-                parents_email__exact='').values_list('parents_email', flat=True)
+                parents_email__exact='').values_list('parents_email', flat=True).distinct()
         elif email_type == 'teachers':
             email_addresses = Teacher.objects.exclude(teacher_email__isnull=True).exclude(
-                teacher_email__exact='').values_list('teacher_email', flat=True)
+                teacher_email__exact='').values_list('teacher_email', flat=True).distinct()
         else:
             return Response({"error": "Invalid email type."}, status=status.HTTP_400_BAD_REQUEST)
 
