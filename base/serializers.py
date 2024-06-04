@@ -361,4 +361,4 @@ class ResultSerializer(serializers.ModelSerializer):
 class EmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Email
-        fields = ['to', 'subject', 'body', 'date']
+        fields = ['id', 'to', 'subject', 'body', 'date']
