@@ -349,6 +349,12 @@ class SendEmailApiView(generics.ListCreateAPIView):
             return Response({"error": "Failed to send email(s)."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class SendEmailRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Email.objects.all()
+    serializer_class = EmailSerializer
+    lookup_field = "pk"
+
+
 class ListEmailAddressesAPIView(APIView):
     def get(self, request, *args, **kwargs):
         email_type = self.kwargs.get('email_type')

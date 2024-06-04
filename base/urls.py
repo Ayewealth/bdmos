@@ -77,6 +77,8 @@ urlpatterns = [
          views.SubjectResultRetrieveUpdateDestroyApiView.as_view(), name="subject_result-details"),
 
     path("send-email/", views.SendEmailApiView.as_view(), name="send-email"),
+    path("send-email/<str:pk>/",
+         views.SendEmailRetrieveUpdateDestroyApiView.as_view(), name="send-email_details"),
     path('list-emails/<str:email_type>/',
          views.ListEmailAddressesAPIView.as_view(), name='list-emails'),
 ]
