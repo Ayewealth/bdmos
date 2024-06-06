@@ -56,7 +56,8 @@ class StudentListCreateApiView(generics.ListCreateAPIView):
     serializer_class = StudentSerializer
     # permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['username', 'first_name', "student_class"]
+    search_fields = ['username', 'first_name',
+                     'last_name', "student_class__name"]
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -137,7 +138,7 @@ class TeacherListCreateApiView(generics.ListCreateAPIView):
     serializer_class = TeacherSerializer
     # permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['username', 'first_name', "phone_number"]
+    search_fields = ['username', 'first_name', 'last_name', "phone_number"]
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -160,7 +161,7 @@ class ParentsListCreateApiView(generics.ListCreateAPIView):
     queryset = Parents.objects.all()
     serializer_class = ParentsSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+    search_fields = ['name', 'phone_number']
 
 
 class ParentsRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
@@ -237,7 +238,7 @@ class NotificationListCreateApiView(generics.ListCreateAPIView):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['teacher_name', 'date']
+    search_fields = ['teacher_name__first_name', 'date']
 
 
 class NotificationRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
@@ -327,6 +328,8 @@ class SubjectResultRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAP
 class SendEmailApiView(generics.ListCreateAPIView):
     queryset = Email.objects.all()
     serializer_class = EmailSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['to']
 
     def post(self, request, *args, **kwargs):
         to_email = request.data.get('to')
