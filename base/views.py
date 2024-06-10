@@ -37,7 +37,9 @@ def endpoints(request):
         "result/",
         "subject_result/",
         "send-email/",
-        "list-emails/<str:email_type>/"
+        "list-emails/<str:email_type>/",
+        "cart/",
+        "cart/add/"
     ]
     return Response(data)
 
@@ -372,3 +374,42 @@ class ListEmailAddressesAPIView(APIView):
             return Response({"error": "Invalid email type."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"email_addresses": list(email_addresses)}, status=status.HTTP_200_OK)
+
+
+class CartListCreateApiView(generics.ListCreateAPIView):
+    queryset = Cart
+    serializer_class = CartSerializer
+
+
+class CartRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Cart
+    serializer_class = CartSerializer
+
+    def get_object(self):
+        user = self.request.user
+        cart, created = Cart.objects.get_or_create(user=user)
+        return cart
+
+
+class AddToCartView(generics.GenericAPIView):
+    serializer_class = CartItemSerializer
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        item_id = request.data.get('item')
+        quantity = request.data.get('quantity', 1)
+
+        try:
+            item = Items.objects.get(id=item_id)
+        except Items.DoesNotExist:
+            return Response({"error": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        cart, created = Cart.objects.get_or_create(user=user)
+
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart, item=item)
+        if not created:
+            cart_item.quantity += int(quantity)
+            cart_item.save()
+
+        return Response({"message": "Item added to cart."}, status=status.HTTP_200_OK)

@@ -81,4 +81,7 @@ urlpatterns = [
          views.SendEmailRetrieveUpdateDestroyApiView.as_view(), name="send-email_details"),
     path('list-emails/<str:email_type>/',
          views.ListEmailAddressesAPIView.as_view(), name='list-emails'),
+
+    path('cart/', views.CartRetrieveUpdateDestroyApiView.as_view(), name='cart-detail'),
+    path('cart/add/', views.AddToCartView.as_view(), name='add-to-cart'),
 ]

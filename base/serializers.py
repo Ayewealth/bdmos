@@ -362,3 +362,17 @@ class EmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Email
         fields = ['id', 'to', 'subject', 'body', 'date']
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartItem
+        fields = ['id', 'item', 'quantity']
+
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True)
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'items']

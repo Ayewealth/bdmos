@@ -359,3 +359,21 @@ class Email(models.Model):
 
     def __str__(self):
         return f"Email to {self.to}"
+
+
+class Cart(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name='cart')
+
+    def __str__(self):
+        return f"Cart of {self.user.username}"
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(
+        Cart, on_delete=models.CASCADE, related_name='items')
+    item = models.ForeignKey(Items, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.quantity} of {self.item.title} in {self.cart.user.username}'s cart"
