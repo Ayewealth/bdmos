@@ -1,3 +1,5 @@
+from .serializers import *
+from .models import *
 from rest_framework.views import APIView
 from .models import Student, Teacher
 from django.shortcuts import render
@@ -12,9 +14,16 @@ from django.core.mail import send_mail, EmailMultiAlternatives
 from django.conf import settings
 from .utils import send_single_email, send_bulk_email
 from rest_framework import status
+from django.utils.crypto import get_random_string
+from .flutterwave import initialize_payment, verify_payment
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
+import logging
 
-from .models import *
-from .serializers import *
+logger = logging.getLogger(__name__)
+
 # Create your views here.
 
 
@@ -34,12 +43,20 @@ def endpoints(request):
         "school_photos/",
         "items/",
         "scheme/",
+        "check_scheme/",
         "result/",
+        "check_result/",
         "subject_result/",
         "send-email/",
         "list-emails/<str:email_type>/",
         "cart/",
-        "cart/add/"
+        "cart/add/",
+        "scratch_cards/",
+        "bills/",
+        "bills/id/",
+        "payments/",
+        "payments-callback/",
+        "transactions/status_type/"
     ]
     return Response(data)
 
@@ -51,6 +68,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class UserListCreateApiView(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+
+class UserProfileListApiView(generics.ListAPIView):
+    queryset = StudentProfile.objects.all()
+    serializer_class = UserProfileSerializer
+
+
+class UserProfileRetriveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = StudentProfile.objects.all()
+    serializer_class = UserProfileSerializer
+    lookup_field = 'pk'
 
 
 class StudentListCreateApiView(generics.ListCreateAPIView):
@@ -297,6 +325,34 @@ class SchemeRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "pk"
 
 
+class CheckScheme(generics.ListCreateAPIView):
+    serializer_class = SchemeSerializer
+
+    def get_queryset(self):
+        student_class = self.request.query_params.get('student_class')
+        session = self.request.query_params.get('session')
+        term = self.request.query_params.get('term')
+
+        queryset = Scheme.objects.all()
+
+        if student_class:
+            queryset = queryset.filter(student_class=student_class)
+        if session:
+            queryset = queryset.filter(session=session)
+        if term:
+            queryset = queryset.filter(term=term)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({'error': 'No Scheme found for the specified session and term'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SchemeSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class ResultListCreateApiView(generics.ListCreateAPIView):
     queryset = Result.objects.all()
     serializer_class = ResultSerializer
@@ -379,11 +435,13 @@ class ListEmailAddressesAPIView(APIView):
 class CartListCreateApiView(generics.ListCreateAPIView):
     queryset = Cart
     serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class CartRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Cart
     serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         user = self.request.user
@@ -413,3 +471,144 @@ class AddToCartView(generics.GenericAPIView):
             cart_item.save()
 
         return Response({"message": "Item added to cart."}, status=status.HTTP_200_OK)
+
+
+class GenerateScratchCardView(generics.ListCreateAPIView):
+    queryset = ScratchCard.objects.all()
+    serializer_class = ScratchCardSerializer
+
+    def create(self, request, *args, **kwargs):
+        amount = int(request.data.get('amount', 1))
+        cards = []
+        for _ in range(amount):
+            pin = get_random_string(12, '0123456789')
+            card = ScratchCard.objects.create(pin=pin)
+            cards.append(card)
+        serializer = ScratchCardSerializer(cards, many=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class CheckResultView(generics.ListCreateAPIView):
+    queryset = Result.objects.all()
+    serializer_class = ResultSerializer
+
+    def create(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        pin = request.data.get('pin')
+        session = request.data.get('session')
+        term = request.data.get('term')
+
+        try:
+            card = ScratchCard.objects.get(pin=pin)
+        except ScratchCard.DoesNotExist:
+            return Response({'error': 'Invalid scratch card pin'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if card.usage_limit <= 0:
+            return Response({'error': 'Scratch card usage limit exceeded'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student = User.objects.get(
+                username=username, role=User.Role.STUDENT)
+        except User.DoesNotExist:
+            return Response({'error': 'Invalid username'}, status=status.HTTP_400_BAD_REQUEST)
+
+        results = Result.objects.filter(
+            student=student, session=session, term=term)
+        if not results:
+            return Response({'error': 'No results found for the specified session and term'}, status=status.HTTP_404_NOT_FOUND)
+
+        card.usage_limit -= 1
+        card.save()
+
+        serializer = ResultSerializer(results, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class BillListCreateView(generics.ListCreateAPIView):
+    queryset = Bill.objects.all()
+    serializer_class = BillSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class BillRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Bill.objects.all()
+    serializer_class = BillSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = "pk"
+
+
+class PaymentListCreateView(generics.ListCreateAPIView):
+    queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Payment.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return PaymentSerializer
+        return PaymentSerializer
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        fee_type = self.request.data.get("fee_type")
+        amount = self.request.data.get("amount")
+
+        if not hasattr(user, 'student'):
+            return Response({"detail": "User is not a student"}, status=status.HTTP_400_BAD_REQUEST)
+
+        student = get_object_or_404(Student, id=user.id)
+
+        response, data = initialize_payment(amount, student, fee_type)
+        print(data)
+        if response.status_code == 200 and data:
+            # Save payment instance with data from Flutterwave
+            payment = serializer.save(
+                user=student,
+                fee_type=fee_type,
+                amount=amount,
+                transaction_id=f"{student.username}-{amount}",
+                link=data['data']['link'],
+                status='Pending'
+            )
+            payment.save()
+        else:
+            error_message = data.get(
+                'message', 'Failed to initialize payment') if data else 'Failed to initialize payment: No response data'
+            logger.error(f"Payment initialization error: {error_message}")
+            raise ValidationError(error_message)
+
+
+@csrf_exempt
+def payment_callback(request):
+    if request.method == 'POST':
+        data = request.json()
+        transaction_id = data['data']['transaction_id']
+        response = verify_payment(transaction_id)
+        if response.status_code == 200:
+            payment_data = response.json()['data']
+            payment = Payment.objects.get(transaction_id=transaction_id)
+            if payment_data['status'] == 'successful':
+                payment.status = 'Approved'
+            else:
+                payment.status = 'Declined'
+            payment.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'failed'}, status=400)
+
+
+class ListTransactionsPaymentView(APIView):
+    def get(self, request, *args, **kwargs):
+        status_type = self.kwargs.get('status_type')
+
+        if status_type == 'approved':
+            transactions = Payment.objects.filter(status="Approved")
+        elif status_type == 'declined':
+            transactions = Payment.objects.filter(status="Declined")
+        elif status_type == 'pending':
+            transactions = Payment.objects.filter(status="Pending")
+        else:
+            return Response({"error": "Invalid status type."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = PaymentSerializer(transactions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

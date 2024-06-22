@@ -3,6 +3,7 @@ from .models import *
 
 # Register your models here.
 admin.site.register(User)
+admin.site.register(StudentProfile)
 admin.site.register(Student)
 admin.site.register(Teacher)
 admin.site.register(Parents)
@@ -18,3 +19,8 @@ admin.site.register(Scheme)
 admin.site.register(Result)
 admin.site.register(SubjectResult)
 admin.site.register(Email)
+admin.site.register(ScratchCard)
+admin.site.register(Cart)
+admin.site.register(CartItem)
+admin.site.register(Payment)
+admin.site.register(Bill)

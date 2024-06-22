@@ -1,3 +1,4 @@
+from .models import Payment
 from .models import Email
 from rest_framework import serializers
 from django.utils.dateformat import DateFormat
@@ -13,7 +14,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = self.user
 
         data['role'] = user.role
-
+        data['user_id'] = user.id
         return data
 
 
@@ -30,6 +31,34 @@ class UserSerializer(serializers.ModelSerializer):
             'role',
             'date_joined'
         ]
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    results = serializers.SerializerMethodField()
+    cart = serializers.SerializerMethodField()
+    transactions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentProfile
+        fields = [
+            'id',
+            'user',
+            'results',
+            'cart',
+            'transactions'
+        ]
+
+    def get_results(self, obj):
+        results = Result.objects.filter(student=obj.user)
+        return ResultSerializer(results, many=True, context=self.context).data
+
+    def get_cart(self, obj):
+        cart = Cart.objects.filter(user=obj.user)
+        return CartSerializer(cart, many=True, context=self.context).data
+
+    def get_transactions(self, obj):
+        transactions = Payment.objects.filter(user=obj.user)
+        return PaymentSerializer(transactions, many=True, context=self.context).data
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -376,3 +405,27 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         fields = ['id', 'user', 'items']
+
+
+class ScratchCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScratchCard
+        fields = ['id', 'pin', 'usage_limit', 'created_at']
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['id', 'user', 'fee_type', 'amount', 'status',
+                  'transaction_id', 'link', 'session', 'term', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'status',
+                            'transaction_id', 'link', 'created_at', 'updated_at']
+
+
+class BillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bill
+        fields = [
+            "id",
+            "name"
+        ]

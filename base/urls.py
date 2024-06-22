@@ -28,6 +28,10 @@ urlpatterns = [
     path("parents/<str:pk>/",
          views.ParentsRetrieveUpdateDestroyApiView.as_view(), name="parents-details"),
 
+    path("user_profile/", views.UserProfileListApiView.as_view(), name="user_profile"),
+    path("user_profile/<str:pk>/",
+         views.UserProfileRetriveUpdateDestroyApiView.as_view(), name="user_profile-details"),
+
     # App 2
     path("terms/", views.TermListCreateApiView.as_view(), name="terms"),
     path("terms/<str:pk>/",
@@ -66,10 +70,13 @@ urlpatterns = [
     path("scheme/", views.SchemeListCreateApiView.as_view(), name="scheme"),
     path("scheme/<str:pk>/",
          views.SchemeRetrieveUpdateDestroyApiView.as_view(), name="scheme-details"),
+    path("check_scheme/", views.CheckScheme.as_view(), name="check_scheme"),
 
     path("result/", views.ResultListCreateApiView.as_view(), name="result"),
     path("result/<str:pk>/",
          views.ResultRetrieveUpdateDestroyApiView.as_view(), name="result-details"),
+    path('check_result/',
+         views.CheckResultView.as_view(), name='check_result'),
 
     path("subject_result/",
          views.SubjectResultListCreateApiView.as_view(), name="subject_result"),
@@ -84,4 +91,17 @@ urlpatterns = [
 
     path('cart/', views.CartRetrieveUpdateDestroyApiView.as_view(), name='cart-detail'),
     path('cart/add/', views.AddToCartView.as_view(), name='add-to-cart'),
+
+    path('scratch_cards/', views.GenerateScratchCardView.as_view(),
+         name='generate_scratch_card'),
+
+    path('bills/', views.BillListCreateView.as_view(), name="bills"),
+    path('bills/<str:pk>/', views.BillRetrieveUpdateDestroyView.as_view(),
+         name="bills-details"),
+
+    path('payments/', views.PaymentListCreateView.as_view(),
+         name='payment-list-create'),
+    path('payments-callback/', views.payment_callback, name='payment-callback'),
+    path('transactions/<str:status_type>/',
+         views.ListTransactionsPaymentView.as_view(), name='transactions'),
 ]

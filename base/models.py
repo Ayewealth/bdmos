@@ -5,6 +5,7 @@ from django.utils import timezone
 import random
 import uuid
 from cloudinary_storage.storage import RawMediaCloudinaryStorage
+from django.conf import settings
 
 # Create your models here.
 
@@ -193,6 +194,13 @@ class Teacher(User):
         return False
 
 
+class StudentProfile(models.Model):
+    user = models.ForeignKey(Student, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user.first_name} Profile"
+
+
 class Parents(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)
     phone_number = models.CharField(max_length=15, null=True, blank=True)
@@ -200,7 +208,7 @@ class Parents(models.Model):
     image = models.ImageField(
         upload_to="parents_images", null=True, blank=True)
     address = models.TextField(null=True, blank=True)
-    children_name = models.ManyToManyField(Student, related_name="Students")
+    children_name = models.TextField(null=True)
 
     class Meta:
         verbose_name_plural = "Parents"
@@ -377,3 +385,45 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} of {self.item.title} in {self.cart.user.username}'s cart"
+
+
+class ScratchCard(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pin = models.CharField(max_length=12, unique=True)
+    usage_limit = models.PositiveIntegerField(default=5)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.pin
+
+
+class Bill(models.Model):
+    name = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Payment(models.Model):
+
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Declined', 'Declined'),
+    ]
+
+    user = models.ForeignKey(Student,
+                             on_delete=models.CASCADE)
+    fee_type = models.ForeignKey(Bill, on_delete=models.CASCADE, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default='Pending')
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    link = models.URLField(blank=True, null=True)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, null=True)
+    term = models.ForeignKey(Term, on_delete=models.CASCADE, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.fee_type} - {self.status}"
