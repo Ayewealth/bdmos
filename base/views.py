@@ -551,13 +551,14 @@ class PaymentListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        fee_type = self.request.data.get("fee_type")
+        fee_type_id = self.request.data.get("fee_type")
         amount = self.request.data.get("amount")
 
         if not hasattr(user, 'student'):
             return Response({"detail": "User is not a student"}, status=status.HTTP_400_BAD_REQUEST)
 
         student = get_object_or_404(Student, id=user.id)
+        fee_type = get_object_or_404(Bill, id=fee_type_id)
 
         response, data = initialize_payment(amount, student, fee_type)
         print(data)
