@@ -26,8 +26,8 @@ def initialize_payment(amount, user, fee_type):
             "name": f"{user.first_name} {user.last_name}"
         },
         "customizations": {
-            "title": fee_type,
-            "description": f"For The Payment Of {fee_type}",
+            "title": fee_type.name,
+            "description": f"For The Payment Of {fee_type.name}",
             "logo": "https://checkout.flutterwave.com/assets/img/rave-logo.png"
         }
     })

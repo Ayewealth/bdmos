@@ -525,13 +525,13 @@ class CheckResultView(generics.ListCreateAPIView):
 
 
 class BillListCreateView(generics.ListCreateAPIView):
-    queryset = Bill.objects.all()
+    queryset = Bills.objects.all()
     serializer_class = BillSerializer
     permission_classes = [IsAuthenticated]
 
 
 class BillRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Bill.objects.all()
+    queryset = Bills.objects.all()
     serializer_class = BillSerializer
     permission_classes = [IsAuthenticated]
     lookup_field = "pk"
@@ -558,7 +558,7 @@ class PaymentListCreateView(generics.ListCreateAPIView):
             return Response({"detail": "User is not a student"}, status=status.HTTP_400_BAD_REQUEST)
 
         student = get_object_or_404(Student, id=user.id)
-        fee_type = get_object_or_404(Bill, id=fee_type_id)
+        fee_type = get_object_or_404(Bills, id=fee_type_id)
 
         response, data = initialize_payment(amount, student, fee_type)
         print(data)

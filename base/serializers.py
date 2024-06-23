@@ -424,7 +424,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 class BillSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Bill
+        model = Bills
         fields = [
             "id",
             "name"

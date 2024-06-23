@@ -208,7 +208,7 @@ class Parents(models.Model):
     image = models.ImageField(
         upload_to="parents_images", null=True, blank=True)
     address = models.TextField(null=True, blank=True)
-    children_name = models.TextField(null=True)
+    children_name = models.ManyToManyField(Student, related_name="Students")
 
     class Meta:
         verbose_name_plural = "Parents"
@@ -397,7 +397,7 @@ class ScratchCard(models.Model):
         return self.pin
 
 
-class Bill(models.Model):
+class Bills(models.Model):
     name = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
@@ -414,7 +414,7 @@ class Payment(models.Model):
 
     user = models.ForeignKey(Student,
                              on_delete=models.CASCADE)
-    fee_type = models.ForeignKey(Bill, on_delete=models.CASCADE, null=True)
+    fee_type = models.ForeignKey(Bills, on_delete=models.CASCADE, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(
         max_length=10, choices=STATUS_CHOICES, default='Pending')
