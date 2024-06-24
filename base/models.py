@@ -208,7 +208,7 @@ class Parents(models.Model):
     image = models.ImageField(
         upload_to="parents_images", null=True, blank=True)
     address = models.TextField(null=True, blank=True)
-    children_name = models.ManyToManyField(Student, related_name="Students")
+    children_name = models.TextField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "Parents"
