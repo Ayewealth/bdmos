@@ -497,6 +497,7 @@ class CheckResultView(generics.ListCreateAPIView):
         pin = request.data.get('pin')
         session = request.data.get('session')
         term = request.data.get('term')
+        student_class = request.data.get('class')
 
         try:
             card = ScratchCard.objects.get(pin=pin)
@@ -513,7 +514,7 @@ class CheckResultView(generics.ListCreateAPIView):
             return Response({'error': 'Invalid username'}, status=status.HTTP_400_BAD_REQUEST)
 
         results = Result.objects.filter(
-            student=student, session=session, term=term)
+            student=student, student_class=student_class, session=session, term=term)
         if not results:
             return Response({'error': 'No results found for the specified session and term'}, status=status.HTTP_404_NOT_FOUND)
 
