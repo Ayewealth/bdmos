@@ -240,7 +240,7 @@ class SubjectRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView)
 class ClassListCreateApiView(generics.ListCreateAPIView):
     queryset = Class.objects.all()
     serializer_class = ClassSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
 
