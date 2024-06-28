@@ -7,6 +7,8 @@ import uuid
 from cloudinary_storage.storage import RawMediaCloudinaryStorage
 from django.conf import settings
 
+from django.contrib.auth import get_user_model
+
 # Create your models here.
 
 
@@ -427,3 +429,12 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.fee_type} - {self.status}"
+
+
+class StudentPassword(models.Model):
+    student = models.OneToOneField(
+        get_user_model(), on_delete=models.CASCADE, null=True, related_name='password_record')
+    raw_password = models.CharField(max_length=255, null=True)
+
+    def __str__(self):
+        return f"Password for {self.student.username}"

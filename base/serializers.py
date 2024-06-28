@@ -357,6 +357,23 @@ class ResultSerializer(serializers.ModelSerializer):
             SubjectResult.objects.create(**subject_result_data)
         return result
 
+    def validate(self, data):
+        student = data.get('student')
+        student_class = data.get('student_class')
+        term = data.get('term')
+        session = data.get('session')
+
+        if Result.objects.filter(
+            student=student,
+            student_class=student_class,
+            term=term,
+            session=session
+        ).exists():
+            raise serializers.ValidationError(
+                "A result for this student, class, term, and session already exists.")
+
+        return data
+
     def update(self, instance, validated_data):
         subject_results_data = validated_data.pop('subject_results', [])
         subject_results = instance.subject_results.all()
@@ -429,3 +446,72 @@ class BillSerializer(serializers.ModelSerializer):
             "id",
             "name"
         ]
+
+
+class StudentPasswordSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentPassword
+        fields = [
+            "id",
+            "student",
+            "student_name",
+            "raw_password"
+        ]
+
+    def get_student_name(self, obj):
+        student = obj.student
+        serializer = UserSerializer(
+            instance=student, many=False)
+        return serializer.data
+
+
+class TeacherApplicationSerializer(serializers.Serializer):
+    first_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    middle_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    last_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    username = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    temporary_residence = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    permanent_residence = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    state_of_origin = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    city_or_town = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    sex = serializers.CharField(
+        max_length=10, required=False, allow_blank=True)
+    phone_number = serializers.CharField(
+        max_length=20, required=False, allow_blank=True)
+    teacher_email = serializers.EmailField(required=False, allow_blank=True)
+    date_of_birth = serializers.DateField(required=False, allow_null=True)
+    religion = serializers.CharField(
+        max_length=50, required=False, allow_blank=True)
+    disability = serializers.CharField(
+        max_length=10, required=False, allow_blank=True)
+    maritial_status = serializers.CharField(
+        max_length=20, required=False, allow_blank=True)
+    years_of_experience = serializers.IntegerField(
+        required=False, allow_null=True,)
+    computer_skills = serializers.CharField(
+        max_length=10, required=False, allow_blank=True)
+    disability_note = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    passport = serializers.URLField(required=False, allow_blank=True)
+    cv = serializers.URLField(required=False, allow_blank=True)
+    flsc = serializers.URLField(required=False, allow_blank=True)
+    waec_neco_nabteb_gce = serializers.URLField(
+        required=False, allow_blank=True)
+    secondary_school_transcript = serializers.URLField(
+        required=False, allow_blank=True)
+    university_polytech_institution_cer = serializers.URLField(
+        required=False, allow_blank=True)
+    university_polytech_institution_cer_trans = serializers.URLField(
+        required=False, allow_blank=True)
+    other_certificate = serializers.URLField(required=False, allow_blank=True)
+    teacher_speech = serializers.CharField(required=False, allow_blank=True)

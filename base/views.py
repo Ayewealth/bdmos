@@ -21,6 +21,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +100,9 @@ class StudentListCreateApiView(generics.ListCreateAPIView):
 
         print("Generated Username:", generated_username)
         print("Generated Password:", generated_password)
+
+        StudentPassword.objects.create(
+            student=instance, raw_password=generated_password)
 
         if parents_email:
             subject = 'Welcome to BDMOS! Access Your Child\'s Portal with These Credentials.'
@@ -307,6 +311,8 @@ class ItemsRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
 class SchemeListCreateApiView(generics.ListCreateAPIView):
     queryset = Scheme.objects.all()
     serializer_class = SchemeSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['subject__name']
 
     def create(self, request, *args, **kwargs):
         if isinstance(request.data, list):
@@ -584,19 +590,42 @@ class PaymentListCreateView(generics.ListCreateAPIView):
 @csrf_exempt
 def payment_callback(request):
     if request.method == 'POST':
-        data = request.json()
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'failed', 'message': 'Invalid JSON data'}, status=400)
+
         transaction_id = data['data']['transaction_id']
-        response = verify_payment(transaction_id)
+        response, payment_data = verify_payment(transaction_id)
         if response.status_code == 200:
-            payment_data = response.json()['data']
             payment = Payment.objects.get(transaction_id=transaction_id)
             if payment_data['status'] == 'successful':
                 payment.status = 'Approved'
             else:
                 payment.status = 'Declined'
             payment.save()
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'failed'}, status=400)
+            return JsonResponse({'status': 'success'})
+        else:
+            return JsonResponse({'status': 'failed', 'message': 'Verification failed'}, status=400)
+
+    elif request.method == 'GET':
+        transaction_id = request.GET.get('transaction_id')
+        if not transaction_id:
+            return JsonResponse({'status': 'failed', 'message': 'No transaction ID provided'}, status=400)
+
+        response, payment_data = verify_payment(transaction_id)
+        if response.status_code == 200:
+            payment = Payment.objects.get(transaction_id=transaction_id)
+            if payment_data['status'] == 'successful':
+                payment.status = 'Approved'
+            else:
+                payment.status = 'Declined'
+            payment.save()
+            return JsonResponse({'status': 'success'})
+        else:
+            return JsonResponse({'status': 'failed', 'message': 'Verification failed'}, status=400)
+
+    return JsonResponse({'status': 'failed', 'message': 'Invalid request method'}, status=400)
 
 
 class ListTransactionsPaymentView(APIView):
@@ -614,3 +643,101 @@ class ListTransactionsPaymentView(APIView):
 
         serializer = PaymentSerializer(transactions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class StudentPasswordListCreateApiView(generics.ListCreateAPIView):
+    queryset = StudentPassword.objects.all()
+    serializer_class = StudentPasswordSerializer
+
+
+class SendTeacherApplicationEmailView(APIView):
+    def post(self, request, *args, **kwargs):
+        email = request.GET.get("teacher_email")
+        serializer = TeacherApplicationSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            admin_email = settings.DEFAULT_FROM_EMAIL
+
+            subject = "New Teacher Application Submission"
+            from_email = email
+            to_email = admin_email
+
+            # Create email content
+            text_content = f"""
+                New teacher application received:
+                First Name: {data.get('first_name', 'N/A')}
+                Middle Name: {data.get('middle_name', 'N/A')}
+                Last Name: {data.get('last_name', 'N/A')}
+                Username: {data.get('username', 'N/A')}
+                Temporary Residence: {data.get('temporary_residence', 'N/A')}
+                Permanent Residence: {data.get('permanent_residence', 'N/A')}
+                State of Origin: {data.get('state_of_origin', 'N/A')}
+                City or Town: {data.get('city_or_town', 'N/A')}
+                Sex: {data.get('sex', 'N/A')}
+                Phone Number: {data.get('phone_number', 'N/A')}
+                Teacher Email: {data.get('teacher_email', 'N/A')}
+                Date of Birth: {data.get('date_of_birth', 'N/A')}
+                Religion: {data.get('religion', 'N/A')}
+                Disability: {data.get('disability', 'N/A')}
+                Marital Status: {data.get('maritial_status', 'N/A')}
+                Years of Experience: {data.get('years_of_experience', 'N/A')}
+                Computer Skills: {data.get('computer_skills', 'N/A')}
+                Disability Note: {data.get('disability_note', 'N/A')}
+                Passport: {data.get('passport', 'N/A')}
+                CV: {data.get('cv', 'N/A')}
+                FSLC: {data.get('flsc', 'N/A')}
+                WAEC/NECO/NABTEB/GCE: {data.get('waec_neco_nabteb_gce', 'N/A')}
+                Secondary School Transcript: {data.get('secondary_school_transcript', 'N/A')}
+                University/Polytechnic Institution Certificate: {data.get('university_polytech_institution_cer', 'N/A')}
+                University/Polytechnic Institution Certificate Transcript: {data.get('university_polytech_institution_cer_trans', 'N/A')}
+                Other Certificate: {data.get('other_certificate', 'N/A')}
+                Teacher Speech: {data.get('teacher_speech', 'N/A')}
+            """
+
+            html_content = f"""
+                <html>
+                    <body>
+                        <p>New teacher application received:</p>
+                        <ul>
+                            <li><strong>First Name:</strong> {data.get('first_name', 'N/A')}</li>
+                            <li><strong>Middle Name:</strong> {data.get('middle_name', 'N/A')}</li>
+                            <li><strong>Last Name:</strong> {data.get('last_name', 'N/A')}</li>
+                            <li><strong>Username:</strong> {data.get('username', 'N/A')}</li>
+                            <li><strong>Temporary Residence:</strong> {data.get('temporary_residence', 'N/A')}</li>
+                            <li><strong>Permanent Residence:</strong> {data.get('permanent_residence', 'N/A')}</li>
+                            <li><strong>State of Origin:</strong> {data.get('state_of_origin', 'N/A')}</li>
+                            <li><strong>City or Town:</strong> {data.get('city_or_town', 'N/A')}</li>
+                            <li><strong>Sex:</strong> {data.get('sex', 'N/A')}</li>
+                            <li><strong>Phone Number:</strong> {data.get('phone_number', 'N/A')}</li>
+                            <li><strong>Teacher Email:</strong> {data.get('teacher_email', 'N/A')}</li>
+                            <li><strong>Date of Birth:</strong> {data.get('date_of_birth', 'N/A')}</li>
+                            <li><strong>Religion:</strong> {data.get('religion', 'N/A')}</li>
+                            <li><strong>Disability:</strong> {data.get('disability', 'N/A')}</li>
+                            <li><strong>Marital Status:</strong> {data.get('maritial_status', 'N/A')}</li>
+                            <li><strong>Years of Experience:</strong> {data.get('years_of_experience', 'N/A')}</li>
+                            <li><strong>Computer Skills:</strong> {data.get('computer_skills', 'N/A')}</li>
+                            <li><strong>Disability Note:</strong> {data.get('disability_note', 'N/A')}</li>
+                            <li><strong>Passport:</strong> <a href="{data.get('passport', 'N/A')}">View Passport</a></li>
+                            <li><strong>CV:</strong> <a href="{data.get('cv', 'N/A')}">View CV</a></li>
+                            <li><strong>FSLC:</strong> <a href="{data.get('flsc', 'N/A')}">View FSLC</a></li>
+                            <li><strong>WAEC/NECO/NABTEB/GCE:</strong> <a href="{data.get('waec_neco_nabteb_gce', 'N/A')}">View Document</a></li>
+                            <li><strong>Secondary School Transcript:</strong> <a href="{data.get('secondary_school_transcript', 'N/A')}">View Transcript</a></li>
+                            <li><strong>University/Polytechnic Institution Certificate:</strong> <a href="{data.get('university_polytech_institution_cer', 'N/A')}">View Certificate</a></li>
+                            <li><strong>University/Polytechnic Institution Certificate Transcript:</strong> <a href="{data.get('university_polytech_institution_cer_trans', 'N/A')}">View Transcript</a></li>
+                            <li><strong>Other Certificate:</strong> <a href="{data.get('other_certificate', 'N/A')}">View Certificate</a></li>
+                            <li><strong>Teacher Speech:</strong> {data.get('teacher_speech', 'N/A')}</li>
+                        </ul>
+                    </body>
+                </html>
+            """
+
+            # Create the email
+            msg = EmailMultiAlternatives(
+                subject, text_content, from_email, [to_email])
+            msg.attach_alternative(html_content, "text/html")
+
+            # Send the email
+            msg.send()
+
+            return Response({"message": "Application submitted successfully and email sent to admin."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

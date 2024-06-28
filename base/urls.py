@@ -104,4 +104,9 @@ urlpatterns = [
     path('payments-callback/', views.payment_callback, name='payment-callback'),
     path('transactions/<str:status_type>/',
          views.ListTransactionsPaymentView.as_view(), name='transactions'),
+
+    path('student_passwords/',
+         views.StudentPasswordListCreateApiView.as_view(), name='student'),
+    path('send-teacher-application-email/', views.SendTeacherApplicationEmailView.as_view(),
+         name='send-teacher-application-email'),
 ]

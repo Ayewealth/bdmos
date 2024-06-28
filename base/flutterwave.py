@@ -2,16 +2,25 @@ import requests
 import json
 from django.conf import settings
 import logging
+from environ import Env  # type: ignore
+env = Env()
+Env.read_env()
 
 logger = logging.getLogger(__name__)
 
 
 def initialize_payment(amount, user, fee_type):
     url = 'https://api.flutterwave.com/v3/payments'
+    secret_key = "FLWSECK_TEST-cbaa808bbfac298abb68c210595e2e01-X"
+    print(secret_key)
+    if not secret_key:
+        logger.error(
+            "FLUTTERWAVE_SECRET_KEY not found in environment variables.")
+        return None, {"message": "Server configuration error: missing payment gateway secret key."}
 
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer FLWSECK_TEST-d5f7e4a194af09f6158620240649a49b-X'
+        'Authorization': f'Bearer {secret_key}'
     }
 
     data = json.dumps({
@@ -47,8 +56,14 @@ def initialize_payment(amount, user, fee_type):
 
 def verify_payment(transaction_id):
     url = f'https://api.flutterwave.com/v3/transactions/{transaction_id}/verify'
+    secret_key = "FLWSECK_TEST-cbaa808bbfac298abb68c210595e2e01-X"
+    if not secret_key:
+        logger.error(
+            "FLUTTERWAVE_SECRET_KEY not found in environment variables.")
+        return None, {"message": "Server configuration error: missing payment gateway secret key."}
+
     headers = {
-        'Authorization': f'Bearer FLWSECK_TEST-d5f7e4a194af09f6158620240649a49b-X',
+        'Authorization': f'Bearer {secret_key}',
         'Content-Type': 'application/json'
     }
 
