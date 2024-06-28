@@ -598,9 +598,10 @@ def payment_callback(request):
             return JsonResponse({'status': 'failed', 'message': 'Invalid JSON data'}, status=400)
 
         transaction_id = data['data']['transaction_id']
+        tx_ref = data['data']['tx_ref']
         response, payment_data = verify_payment(transaction_id)
         if response.status_code == 200:
-            payment = Payment.objects.get(transaction_id=transaction_id)
+            payment = Payment.objects.get(transaction_id=tx_ref)
             if payment_data['status'] == 'successful':
                 payment.status = 'Approved'
             else:
@@ -612,12 +613,13 @@ def payment_callback(request):
 
     elif request.method == 'GET':
         transaction_id = request.GET.get('transaction_id')
+        tx_ref = request.GET.get('tx_ref')
         if not transaction_id:
             return JsonResponse({'status': 'failed', 'message': 'No transaction ID provided'}, status=400)
 
         response, payment_data = verify_payment(transaction_id)
         if response.status_code == 200:
-            payment = Payment.objects.get(transaction_id=transaction_id)
+            payment = Payment.objects.get(transaction_id=tx_ref)
             if payment_data['status'] == 'successful':
                 payment.status = 'Approved'
             else:
