@@ -57,7 +57,9 @@ def endpoints(request):
         "bills/id/",
         "payments/",
         "payments-callback/",
-        "transactions/status_type/"
+        "transactions/status_type/",
+        "student_passwords/",
+        "send-teacher-application-email/"
     ]
     return Response(data)
 
