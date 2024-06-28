@@ -309,7 +309,7 @@ class ResultSerializer(serializers.ModelSerializer):
             'term',
             'session',
             'sex',
-            "total_marks_obtain",
+            'total_marks_obtain',
             'student_average',
             'class_average',
             'students',
@@ -363,43 +363,55 @@ class ResultSerializer(serializers.ModelSerializer):
         term = data.get('term')
         session = data.get('session')
 
-        if Result.objects.filter(
-            student=student,
-            student_class=student_class,
-            term=term,
-            session=session
-        ).exists():
-            raise serializers.ValidationError(
-                "A result for this student, class, term, and session already exists.")
+        # If instance is present, exclude it from the validation query
+        if self.instance:
+            if Result.objects.filter(
+                student=student,
+                student_class=student_class,
+                term=term,
+                session=session
+            ).exclude(id=self.instance.id).exists():
+                raise serializers.ValidationError(
+                    "A result for this student, class, term, and session already exists.")
+        else:
+            if Result.objects.filter(
+                student=student,
+                student_class=student_class,
+                term=term,
+                session=session
+            ).exists():
+                raise serializers.ValidationError(
+                    "A result for this student, class, term, and session already exists.")
 
         return data
 
     def update(self, instance, validated_data):
         subject_results_data = validated_data.pop('subject_results', [])
-        subject_results = instance.subject_results.all()
-        subject_results = list(subject_results)
-        instance.student = validated_data.get('student', instance.student)
-        instance.student_class = validated_data.get(
-            'student_class', instance.student_class)
-        instance.term = validated_data.get('term', instance.term)
-        instance.session = validated_data.get('session', instance.session)
+
+        # Update the Result instance
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         instance.save()
 
+        # Handling SubjectResult updates
+        existing_subject_results = {
+            sr.id: sr for sr in instance.subjectresult_set.all()}
+
         for subject_result_data in subject_results_data:
-            subject_result = subject_results.pop(0)
-            subject_result.subject = subject_result_data.get(
-                'subject', subject_result.subject)
-            subject_result.total_ca = subject_result_data.get(
-                'total_ca', subject_result.total_ca)
-            subject_result.exam = subject_result_data.get(
-                'exam', subject_result.exam)
-            subject_result.total = subject_result_data.get(
-                'total', subject_result.total)
-            subject_result.grade = subject_result_data.get(
-                'grade', subject_result.grade)
-            subject_result.position = subject_result_data.get(
-                'position', subject_result.position)
-            subject_result.save()
+            subject_result_id = subject_result_data.get('id')
+            if subject_result_id and subject_result_id in existing_subject_results:
+                subject_result = existing_subject_results.pop(
+                    subject_result_id)
+                for attr, value in subject_result_data.items():
+                    setattr(subject_result, attr, value)
+                subject_result.save()
+            else:
+                subject_result_data['result'] = instance
+                SubjectResult.objects.create(**subject_result_data)
+
+        # Delete SubjectResults that are no longer present
+        for subject_result in existing_subject_results.values():
+            subject_result.delete()
 
         return instance
 
