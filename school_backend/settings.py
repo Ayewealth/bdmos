@@ -19,7 +19,7 @@ import os
 env = Env()
 Env.read_env()
 ENVIRONMENT = env('ENVIRONMENT', default='production')
-POSTGRES_LOCALLY = True
+POSTGRES_LOCALLY = False
 FLUTTERWAVE_SECRET_KEY = env('FLUTTERWAVE_SECRET_KEY')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

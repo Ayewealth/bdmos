@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def initialize_payment(amount, user, fee_type):
     url = 'https://api.flutterwave.com/v3/payments'
-    secret_key = env("FLUTTERWAVE_SECRET_KEY")
+    secret_key = "FLWSECK_TEST-cbaa808bbfac298abb68c210595e2e01-X"
     print(secret_key)
     if not secret_key:
         logger.error(
@@ -56,7 +56,7 @@ def initialize_payment(amount, user, fee_type):
 
 def verify_payment(transaction_id):
     url = f'https://api.flutterwave.com/v3/transactions/{transaction_id}/verify'
-    secret_key = env("FLUTTERWAVE_SECRET_KEY")
+    secret_key = "FLWSECK_TEST-cbaa808bbfac298abb68c210595e2e01-X"
     if not secret_key:
         logger.error(
             "FLUTTERWAVE_SECRET_KEY not found in environment variables.")

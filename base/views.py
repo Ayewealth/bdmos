@@ -602,7 +602,7 @@ def payment_callback(request):
         response, payment_data = verify_payment(transaction_id)
         if response.status_code == 200:
             payment = Payment.objects.get(transaction_id=tx_ref)
-            if payment_data['status'] == 'successful':
+            if payment_data['status'] == 'success':
                 payment.status = 'Approved'
             else:
                 payment.status = 'Declined'
@@ -620,7 +620,7 @@ def payment_callback(request):
         response, payment_data = verify_payment(transaction_id)
         if response.status_code == 200:
             payment = Payment.objects.get(transaction_id=tx_ref)
-            if payment_data['status'] == 'successful':
+            if payment_data['status'] == 'success':
                 payment.status = 'Approved'
             else:
                 payment.status = 'Declined'
