@@ -269,17 +269,50 @@ class SessionSerializer(serializers.ModelSerializer):
 
 
 class SchemeSerializer(serializers.ModelSerializer):
+    term_name = serializers.SerializerMethodField()
+    session_name = serializers.SerializerMethodField()
+    class_name = serializers.SerializerMethodField()
+    subject_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Scheme
         fields = [
             'id',
             'student_class',
+            'class_name',
             'term',
+            'term_name',
             'session',
+            'session_name',
             'date',
             'subject',
+            'subject_name',
             'scheme'
         ]
+
+    def get_subject_name(self, obj):
+        subject = obj.subject
+        serializer = SubjectSerializer(
+            instance=subject, many=False)
+        return serializer.data
+
+    def get_class_name(self, obj):
+        student_class = obj.student_class
+        serializer = ClassSerializer(
+            instance=student_class, many=False)
+        return serializer.data
+
+    def get_session_name(self, obj):
+        session = obj.session
+        serializer = SessionSerializer(
+            instance=session, many=False)
+        return serializer.data
+
+    def get_term_name(self, obj):
+        term = obj.term
+        serializer = TermSerializer(
+            instance=term, many=False)
+        return serializer.data
 
 
 class SubjectResultSerializer(serializers.ModelSerializer):
@@ -299,15 +332,23 @@ class SubjectResultSerializer(serializers.ModelSerializer):
 
 class ResultSerializer(serializers.ModelSerializer):
     subject_results = SubjectResultSerializer(many=True, required=False)
+    student_name = serializers.SerializerMethodField()
+    term_name = serializers.SerializerMethodField()
+    session_name = serializers.SerializerMethodField()
+    class_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Result
         fields = [
             'id',
             'student',
+            'student_name',
             'student_class',
+            'class_name',
             'term',
+            'term_name',
             'session',
+            'session_name',
             'sex',
             'total_marks_obtain',
             'student_average',
@@ -337,6 +378,30 @@ class ResultSerializer(serializers.ModelSerializer):
             'next_term_school_fees',
             'subject_results',
         ]
+
+    def get_class_name(self, obj):
+        student_class = obj.student_class
+        serializer = ClassSerializer(
+            instance=student_class, many=False)
+        return serializer.data
+
+    def get_session_name(self, obj):
+        session = obj.session
+        serializer = SessionSerializer(
+            instance=session, many=False)
+        return serializer.data
+
+    def get_term_name(self, obj):
+        term = obj.term
+        serializer = TermSerializer(
+            instance=term, many=False)
+        return serializer.data
+
+    def get_student_name(self, obj):
+        student = obj.student
+        serializer = UserSerializer(
+            instance=student, many=False)
+        return serializer.data
 
     def get_subject_results(self, obj):
         subject_results = SubjectResult.objects.filter(result=obj)

@@ -9,7 +9,7 @@ Env.read_env()
 logger = logging.getLogger(__name__)
 
 
-def initialize_payment(amount, user, fee_type):
+def initialize_payment(amount, user, fee_type, tx_ref):
     url = 'https://api.flutterwave.com/v3/payments'
     secret_key = env("FLUTTERWAVE_SECRET_KEY")
     print(secret_key)
@@ -24,7 +24,7 @@ def initialize_payment(amount, user, fee_type):
     }
 
     data = json.dumps({
-        "tx_ref": f"{user.username}-{amount}",
+        "tx_ref": f"{user.username}-{tx_ref}",
         "amount": amount,
         "currency": "NGN",
         "redirect_url": "https://bdmos.onrender.com/api/payments-callback/",
