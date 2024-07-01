@@ -318,14 +318,12 @@ class SchemeSerializer(serializers.ModelSerializer):
         student_class = data.get('student_class')
         term = data.get('term')
         session = data.get('session')
-        date = data.get('date')
 
         # If instance is present, exclude it from the validation query
         if Scheme.objects.filter(
             student_class=student_class,
             term=term,
             session=session,
-            date=date
         ).exists():
             raise serializers.ValidationError(
                 "A scheme for this class, term, session and date already exists.")
