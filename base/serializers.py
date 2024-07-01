@@ -314,20 +314,47 @@ class SchemeSerializer(serializers.ModelSerializer):
             instance=term, many=False)
         return serializer.data
 
+    def validate(self, data):
+        student_class = data.get('student_class')
+        term = data.get('term')
+        session = data.get('session')
+        date = data.get('date')
+
+        # If instance is present, exclude it from the validation query
+        if Scheme.objects.filter(
+            student_class=student_class,
+            term=term,
+            session=session,
+            date=date
+        ).exists():
+            raise serializers.ValidationError(
+                "A scheme for this class, term, session and date already exists.")
+
+        return data
+
 
 class SubjectResultSerializer(serializers.ModelSerializer):
+    subject_name = serializers.SerializerMethodField()
+
     class Meta:
         model = SubjectResult
         fields = [
             'id',
             'result',
             'subject',
+            'subject_name',
             'total_ca',
             'exam',
             'total',
             'grade',
             'position',
         ]
+
+    def get_subject_name(self, obj):
+        subject = obj.subject
+        serializer = SubjectSerializer(
+            instance=subject, many=False)
+        return serializer.data
 
 
 class ResultSerializer(serializers.ModelSerializer):

@@ -57,6 +57,7 @@ def endpoints(request):
         "bills/id/",
         "payments/",
         "payments-callback/",
+        "all_payments/",
         "transactions/status_type/",
         "student_passwords/",
         "send-teacher-application-email/"
@@ -631,6 +632,11 @@ def payment_callback(request):
             return JsonResponse({'status': 'failed', 'message': 'Verification failed'}, status=400)
 
     return JsonResponse({'status': 'failed', 'message': 'Invalid request method'}, status=400)
+
+
+class AllPaymentsListApiView(generics.ListAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
 
 
 class ListTransactionsPaymentView(APIView):
