@@ -513,17 +513,29 @@ class EmailSerializer(serializers.ModelSerializer):
 
 
 class CartItemSerializer(serializers.ModelSerializer):
+    item_data = serializers.SerializerMethodField()
+
     class Meta:
         model = CartItem
-        fields = ['id', 'item', 'quantity']
+        fields = ['id', 'item', 'item_data', 'quantity']
+
+    def get_item_data(self, obj):
+        item = obj.item
+        serializer = ItemsSerializer(
+            instance=item, many=False)
+        return serializer.data
 
 
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True)
+    total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ['id', 'user', 'items']
+        fields = ['id', 'user', 'items', 'total_price']
+
+    def get_total_price(self, obj):
+        return sum(item.get_total_price() for item in obj.items.all())
 
 
 class ScratchCardSerializer(serializers.ModelSerializer):

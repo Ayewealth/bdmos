@@ -388,6 +388,9 @@ class CartItem(models.Model):
     def __str__(self):
         return f"{self.quantity} of {self.item.title} in {self.cart.user.username}'s cart"
 
+    def get_total_price(self):
+        return self.quantity * self.item.price
+
 
 class ScratchCard(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

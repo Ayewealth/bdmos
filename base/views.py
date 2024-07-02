@@ -52,6 +52,7 @@ def endpoints(request):
         "list-emails/<str:email_type>/",
         "cart/",
         "cart/add/",
+        "cart/remove/",
         "scratch_cards/",
         "bills/",
         "bills/id/",
@@ -448,7 +449,7 @@ class CartListCreateApiView(generics.ListCreateAPIView):
 
 
 class CartRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Cart
+    queryset = Cart.objects.all()
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
 
@@ -460,6 +461,7 @@ class CartRetrieveUpdateDestroyApiView(generics.RetrieveUpdateDestroyAPIView):
 
 class AddToCartView(generics.GenericAPIView):
     serializer_class = CartItemSerializer
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -477,9 +479,27 @@ class AddToCartView(generics.GenericAPIView):
             cart=cart, item=item)
         if not created:
             cart_item.quantity += int(quantity)
-            cart_item.save()
+        else:
+            cart_item.quantity = int(quantity)
+        cart_item.save()
 
         return Response({"message": "Item added to cart."}, status=status.HTTP_200_OK)
+
+
+class RemoveFromCartView(generics.GenericAPIView):
+    serializer_class = CartItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+        item_id = request.data.get('item')
+
+        cart = get_object_or_404(Cart, user=user)
+        item = get_object_or_404(Items, id=item_id)
+        cart_item = get_object_or_404(CartItem, cart=cart, item=item)
+
+        cart_item.delete()
+        return Response({"message": "Item removed from cart."}, status=status.HTTP_200_OK)
 
 
 class GenerateScratchCardView(generics.ListCreateAPIView):

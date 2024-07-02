@@ -91,6 +91,8 @@ urlpatterns = [
 
     path('cart/', views.CartRetrieveUpdateDestroyApiView.as_view(), name='cart-detail'),
     path('cart/add/', views.AddToCartView.as_view(), name='add-to-cart'),
+    path('cart/remove/', views.RemoveFromCartView.as_view(),
+         name='remove-from-cart'),
 
     path('scratch_cards/', views.GenerateScratchCardView.as_view(),
          name='generate_scratch_card'),
