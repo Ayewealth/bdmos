@@ -435,8 +435,8 @@ class Payment(models.Model):
 
 
 class StudentPassword(models.Model):
-    student = models.OneToOneField(
-        get_user_model(), on_delete=models.CASCADE, null=True, related_name='password_record')
+    student = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=True, related_name='password_record')
     raw_password = models.CharField(max_length=255, null=True)
 
     def __str__(self):

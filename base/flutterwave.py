@@ -1,4 +1,4 @@
-import requests
+import requests # type: ignore
 import json
 from django.conf import settings
 import logging

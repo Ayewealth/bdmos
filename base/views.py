@@ -1,3 +1,5 @@
+from .serializers import TeacherApplicationSerializer
+from django.core.mail import EmailMultiAlternatives
 from .serializers import *
 from .models import *
 from rest_framework.views import APIView
@@ -486,6 +488,37 @@ class AddToCartView(generics.GenericAPIView):
         return Response({"message": "Item added to cart."}, status=status.HTTP_200_OK)
 
 
+class ReduceFromCart(generics.GenericAPIView):
+    serializer_class = CartItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        item_id = request.data.get('item')
+        quantity = request.data.get('quantity', 1)
+
+        try:
+            item = Items.objects.get(id=item_id)
+        except Items.DoesNotExist:
+            return Response({"error": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        cart, created = Cart.objects.get_or_create(user=user)
+
+        try:
+            cart_item = CartItem.objects.get(cart=cart, item=item)
+            cart_item.quantity -= int(quantity)
+            if cart_item.quantity <= 0:
+                cart_item.delete()
+                message = "Item removed from cart."
+            else:
+                cart_item.save()
+                message = "Item quantity reduced in cart."
+        except CartItem.DoesNotExist:
+            return Response({"error": "Item not in cart."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"message": message}, status=status.HTTP_200_OK)
+
+
 class RemoveFromCartView(generics.GenericAPIView):
     serializer_class = CartItemSerializer
     permission_classes = [IsAuthenticated]
@@ -679,6 +712,9 @@ class ListTransactionsPaymentView(APIView):
 class StudentPasswordListCreateApiView(generics.ListCreateAPIView):
     queryset = StudentPassword.objects.all()
     serializer_class = StudentPasswordSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'student__username', 'student__first_name', 'student__last_name']
 
 
 class SendTeacherApplicationEmailView(APIView):
@@ -714,14 +750,6 @@ class SendTeacherApplicationEmailView(APIView):
                 Years of Experience: {data.get('years_of_experience', 'N/A')}
                 Computer Skills: {data.get('computer_skills', 'N/A')}
                 Disability Note: {data.get('disability_note', 'N/A')}
-                Passport: {data.get('passport', 'N/A')}
-                CV: {data.get('cv', 'N/A')}
-                FSLC: {data.get('flsc', 'N/A')}
-                WAEC/NECO/NABTEB/GCE: {data.get('waec_neco_nabteb_gce', 'N/A')}
-                Secondary School Transcript: {data.get('secondary_school_transcript', 'N/A')}
-                University/Polytechnic Institution Certificate: {data.get('university_polytech_institution_cer', 'N/A')}
-                University/Polytechnic Institution Certificate Transcript: {data.get('university_polytech_institution_cer_trans', 'N/A')}
-                Other Certificate: {data.get('other_certificate', 'N/A')}
                 Teacher Speech: {data.get('teacher_speech', 'N/A')}
             """
 
@@ -748,14 +776,6 @@ class SendTeacherApplicationEmailView(APIView):
                             <li><strong>Years of Experience:</strong> {data.get('years_of_experience', 'N/A')}</li>
                             <li><strong>Computer Skills:</strong> {data.get('computer_skills', 'N/A')}</li>
                             <li><strong>Disability Note:</strong> {data.get('disability_note', 'N/A')}</li>
-                            <li><strong>Passport:</strong> <a href="{data.get('passport', 'N/A')}">View Passport</a></li>
-                            <li><strong>CV:</strong> <a href="{data.get('cv', 'N/A')}">View CV</a></li>
-                            <li><strong>FSLC:</strong> <a href="{data.get('flsc', 'N/A')}">View FSLC</a></li>
-                            <li><strong>WAEC/NECO/NABTEB/GCE:</strong> <a href="{data.get('waec_neco_nabteb_gce', 'N/A')}">View Document</a></li>
-                            <li><strong>Secondary School Transcript:</strong> <a href="{data.get('secondary_school_transcript', 'N/A')}">View Transcript</a></li>
-                            <li><strong>University/Polytechnic Institution Certificate:</strong> <a href="{data.get('university_polytech_institution_cer', 'N/A')}">View Certificate</a></li>
-                            <li><strong>University/Polytechnic Institution Certificate Transcript:</strong> <a href="{data.get('university_polytech_institution_cer_trans', 'N/A')}">View Transcript</a></li>
-                            <li><strong>Other Certificate:</strong> <a href="{data.get('other_certificate', 'N/A')}">View Certificate</a></li>
                             <li><strong>Teacher Speech:</strong> {data.get('teacher_speech', 'N/A')}</li>
                         </ul>
                     </body>
@@ -766,6 +786,171 @@ class SendTeacherApplicationEmailView(APIView):
             msg = EmailMultiAlternatives(
                 subject, text_content, from_email, [to_email])
             msg.attach_alternative(html_content, "text/html")
+
+            # Attach files
+            if request.FILES:
+                for field_name, file in request.FILES.items():
+                    msg.attach(file.name, file.read(), file.content_type)
+
+            # Send the email
+            msg.send()
+
+            return Response({"message": "Application submitted successfully and email sent to admin."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SendStudentApplicationEmailView(APIView):
+    def post(self, request, *args, **kwargs):
+        email = request.GET.get("parents_email")
+        serializer = TeacherApplicationSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            admin_email = settings.DEFAULT_FROM_EMAIL
+
+            subject = "New Teacher Application Submission"
+            from_email = email
+            to_email = admin_email
+
+            # Create email content
+            text_content = f"""
+                New teacher application received:
+                First Name: {data.get('first_name', 'N/A')}
+                Middle Name: {data.get('middle_name', 'N/A')}
+                Last Name: {data.get('last_name', 'N/A')}
+                Username: {data.get('username', 'N/A')}
+                Temporary Residence: {data.get('temporary_residence', 'N/A')}
+                Permanent Residence: {data.get('permanent_residence', 'N/A')}
+                State of Origin: {data.get('state_of_origin', 'N/A')}
+                City or Town: {data.get('city_or_town', 'N/A')}
+                Sex: {data.get('sex', 'N/A')}
+                Phone Number: {data.get('phone_number', 'N/A')}
+                Teacher Email: {data.get('teacher_email', 'N/A')}
+                Date of Birth: {data.get('date_of_birth', 'N/A')}
+                Religion: {data.get('religion', 'N/A')}
+                Disability: {data.get('disability', 'N/A')}
+                Marital Status: {data.get('maritial_status', 'N/A')}
+                Years of Experience: {data.get('years_of_experience', 'N/A')}
+                Computer Skills: {data.get('computer_skills', 'N/A')}
+                Disability Note: {data.get('disability_note', 'N/A')}
+                Teacher Speech: {data.get('teacher_speech', 'N/A')}
+            """
+
+            html_content = f"""
+                <html>
+                    <body>
+                        <p>New teacher application received:</p>
+                        <ul>
+                            <li><strong>First Name:</strong> {data.get('first_name', 'N/A')}</li>
+                            <li><strong>Middle Name:</strong> {data.get('middle_name', 'N/A')}</li>
+                            <li><strong>Last Name:</strong> {data.get('last_name', 'N/A')}</li>
+                            <li><strong>Username:</strong> {data.get('username', 'N/A')}</li>
+                            <li><strong>Temporary Residence:</strong> {data.get('temporary_residence', 'N/A')}</li>
+                            <li><strong>Permanent Residence:</strong> {data.get('permanent_residence', 'N/A')}</li>
+                            <li><strong>State of Origin:</strong> {data.get('state_of_origin', 'N/A')}</li>
+                            <li><strong>City or Town:</strong> {data.get('city_or_town', 'N/A')}</li>
+                            <li><strong>Sex:</strong> {data.get('sex', 'N/A')}</li>
+                            <li><strong>Phone Number:</strong> {data.get('phone_number', 'N/A')}</li>
+                            <li><strong>Teacher Email:</strong> {data.get('teacher_email', 'N/A')}</li>
+                            <li><strong>Date of Birth:</strong> {data.get('date_of_birth', 'N/A')}</li>
+                            <li><strong>Religion:</strong> {data.get('religion', 'N/A')}</li>
+                            <li><strong>Disability:</strong> {data.get('disability', 'N/A')}</li>
+                            <li><strong>Marital Status:</strong> {data.get('maritial_status', 'N/A')}</li>
+                            <li><strong>Years of Experience:</strong> {data.get('years_of_experience', 'N/A')}</li>
+                            <li><strong>Computer Skills:</strong> {data.get('computer_skills', 'N/A')}</li>
+                            <li><strong>Disability Note:</strong> {data.get('disability_note', 'N/A')}</li>
+                            <li><strong>Teacher Speech:</strong> {data.get('teacher_speech', 'N/A')}</li>
+                        </ul>
+                    </body>
+                </html>
+            """
+
+            # Create the email
+            msg = EmailMultiAlternatives(
+                subject, text_content, from_email, [to_email])
+            msg.attach_alternative(html_content, "text/html")
+
+            # Attach files
+            if request.FILES:
+                for field_name, file in request.FILES.items():
+                    msg.attach(file.name, file.read(), file.content_type)
+
+            # Send the email
+            msg.send()
+
+            return Response({"message": "Application submitted successfully and email sent to admin."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SendStudentApplicationEmailView(APIView):
+    def post(self, request, *args, **kwargs):
+        email = request.GET.get("parents_email")
+        serializer = StudentApplicationSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            admin_email = settings.DEFAULT_FROM_EMAIL
+
+            subject = "New Student Application Submission"
+            from_email = email
+            to_email = admin_email
+
+            # Create email content
+            text_content = f"""
+                New student application received:
+                First Name: {data.get('first_name', 'N/A')}
+                Middle Name: {data.get('middle_name', 'N/A')}
+                Last Name: {data.get('last_name', 'N/A')}
+                Username: {data.get('username', 'N/A')}
+                Father Name: {data.get('father_name', 'N/A')}
+                Mother Name: {data.get('mother_name', 'N/A')}
+                Guardian Name: {data.get('gurdian_name', 'N/A')}
+                Parents Phone Number: {data.get('parents_phone_number', 'N/A')}
+                Parents Email: {data.get('parents_email', 'N/A')}
+                State of Origin: {data.get('state_of_origin', 'N/A')}
+                Religion: {data.get('religion', 'N/A')}
+                Disability: {data.get('disability', 'N/A')}
+                Disability Note: {data.get('disability_note', 'N/A')}
+                City or Town: {data.get('city_or_town', 'N/A')}
+                Previous School: {data.get('previous_school', 'N/A')}
+                Student Class: {data.get('student_class', 'N/A')}
+                Date of Birth: {data.get('date_of_birth', 'N/A')}
+            """
+
+            html_content = f"""
+                <html>
+                    <body>
+                        <p>New student application received:</p>
+                        <ul>
+                            <li><strong>First Name:</strong> {data.get('first_name', 'N/A')}</li>
+                            <li><strong>Middle Name:</strong> {data.get('middle_name', 'N/A')}</li>
+                            <li><strong>Last Name:</strong> {data.get('last_name', 'N/A')}</li>
+                            <li><strong>Username:</strong> {data.get('username', 'N/A')}</li>
+                            <li><strong>Father Name:</strong> {data.get('father_name', 'N/A')}</li>
+                            <li><strong>Mother Name:</strong> {data.get('mother_name', 'N/A')}</li>
+                            <li><strong>Guardian Name:</strong> {data.get('gurdian_name', 'N/A')}</li>
+                            <li><strong>Parents Phone Number:</strong> {data.get('parents_phone_number', 'N/A')}</li>
+                            <li><strong>Parents Email:</strong> {data.get('parents_email', 'N/A')}</li>
+                            <li><strong>State of Origin:</strong> {data.get('state_of_origin', 'N/A')}</li>
+                            <li><strong>Religion:</strong> {data.get('religion', 'N/A')}</li>
+                            <li><strong>Disability:</strong> {data.get('disability', 'N/A')}</li>
+                            <li><strong>Disability Note:</strong> {data.get('disability_note', 'N/A')}</li>
+                            <li><strong>City or Town:</strong> {data.get('city_or_town', 'N/A')}</li>
+                            <li><strong>Previous School:</strong> {data.get('previous_school', 'N/A')}</li>
+                            <li><strong>Student Class:</strong> {data.get('student_class', 'N/A')}</li>
+                            <li><strong>Date of Birth:</strong> {data.get('date_of_birth', 'N/A')}</li>
+                        </ul>
+                    </body>
+                </html>
+            """
+
+            # Create the email
+            msg = EmailMultiAlternatives(
+                subject, text_content, from_email, [to_email])
+            msg.attach_alternative(html_content, "text/html")
+
+            # Attach files
+            if request.FILES:
+                for field_name, file in request.FILES.items():
+                    msg.attach(file.name, file.read(), file.content_type)
 
             # Send the email
             msg.send()

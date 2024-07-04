@@ -318,12 +318,14 @@ class SchemeSerializer(serializers.ModelSerializer):
         student_class = data.get('student_class')
         term = data.get('term')
         session = data.get('session')
+        date = data.get('date')
 
         # If instance is present, exclude it from the validation query
         if Scheme.objects.filter(
             student_class=student_class,
             term=term,
             session=session,
+            date=date
         ).exists():
             raise serializers.ValidationError(
                 "A scheme for this class, term, session and date already exists.")
@@ -545,12 +547,27 @@ class ScratchCardSerializer(serializers.ModelSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
+    session_name = serializers.SerializerMethodField()
+    term_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Payment
         fields = ['id', 'user', 'fee_type', 'amount', 'status',
-                  'transaction_id', 'link', 'session', 'term', 'created_at', 'updated_at']
+                  'transaction_id', 'link', 'session', 'session_name', 'term', 'term_name', 'created_at', 'updated_at']
         read_only_fields = ['id', 'user', 'status',
                             'transaction_id', 'link', 'created_at', 'updated_at']
+
+    def get_session_name(self, obj):
+        session = obj.session
+        serializer = SessionSerializer(
+            instance=session, many=False)
+        return serializer.data
+
+    def get_term_name(self, obj):
+        term = obj.term
+        serializer = TermSerializer(
+            instance=term, many=False)
+        return serializer.data
 
 
 class BillSerializer(serializers.ModelSerializer):
@@ -616,16 +633,53 @@ class TeacherApplicationSerializer(serializers.Serializer):
         max_length=10, required=False, allow_blank=True)
     disability_note = serializers.CharField(
         max_length=255, required=False, allow_blank=True)
-    passport = serializers.URLField(required=False, allow_blank=True)
-    cv = serializers.URLField(required=False, allow_blank=True)
-    flsc = serializers.URLField(required=False, allow_blank=True)
-    waec_neco_nabteb_gce = serializers.URLField(
-        required=False, allow_blank=True)
-    secondary_school_transcript = serializers.URLField(
-        required=False, allow_blank=True)
-    university_polytech_institution_cer = serializers.URLField(
-        required=False, allow_blank=True)
-    university_polytech_institution_cer_trans = serializers.URLField(
-        required=False, allow_blank=True)
-    other_certificate = serializers.URLField(required=False, allow_blank=True)
-    teacher_speech = serializers.CharField(required=False, allow_blank=True)
+    passport = serializers.FileField(required=False)
+    cv = serializers.FileField(required=False)
+    flsc = serializers.FileField(required=False)
+    waec_neco_nabteb_gce = serializers.FileField(
+        required=False)
+    secondary_school_transcript = serializers.FileField(
+        required=False)
+    university_polytech_institution_cer = serializers.FileField(
+        required=False)
+    university_polytech_institution_cer_trans = serializers.FileField(
+        required=False)
+    other_certificate = serializers.FileField(required=False)
+    teacher_speech = serializers.CharField(required=False)
+
+
+class StudentApplicationSerializer(serializers.Serializer):
+    first_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    middle_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    last_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    username = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    father_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    mother_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    gurdian_name = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    parents_phone_number = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    parents_email = serializers.EmailField(
+        max_length=255, required=False, allow_blank=True)
+    state_of_origin = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    religion = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    disability = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    disability_note = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    city_or_town = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    previous_school = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    student_class = serializers.CharField(
+        max_length=255, required=False, allow_blank=True)
+    passport = serializers.FileField(required=False)
+    date_of_birth = serializers.DateField(required=False, allow_null=True)

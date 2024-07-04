@@ -91,6 +91,7 @@ urlpatterns = [
 
     path('cart/', views.CartRetrieveUpdateDestroyApiView.as_view(), name='cart-detail'),
     path('cart/add/', views.AddToCartView.as_view(), name='add-to-cart'),
+    path('cart/reduce/', views.ReduceFromCart.as_view(), name='reduce-from-cart'),
     path('cart/remove/', views.RemoveFromCartView.as_view(),
          name='remove-from-cart'),
 
@@ -112,4 +113,6 @@ urlpatterns = [
          views.StudentPasswordListCreateApiView.as_view(), name='student'),
     path('send-teacher-application-email/', views.SendTeacherApplicationEmailView.as_view(),
          name='send-teacher-application-email'),
+    path('send-student-application-email/', views.SendStudentApplicationEmailView.as_view(),
+         name='send-student-application-email'),
 ]
