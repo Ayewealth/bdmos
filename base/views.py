@@ -54,6 +54,7 @@ def endpoints(request):
         "list-emails/<str:email_type>/",
         "cart/",
         "cart/add/",
+        "cart/reduce/",
         "cart/remove/",
         "scratch_cards/",
         "bills/",
@@ -63,7 +64,8 @@ def endpoints(request):
         "all_payments/",
         "transactions/status_type/",
         "student_passwords/",
-        "send-teacher-application-email/"
+        "send-teacher-application-email/",
+        "send-student-application-email/"
     ]
     return Response(data)
 
