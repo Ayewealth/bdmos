@@ -3,6 +3,7 @@ from .models import Email
 from rest_framework import serializers
 from django.utils.dateformat import DateFormat
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer  # type: ignore
+from django.core.exceptions import ObjectDoesNotExist
 
 from .models import *
 
@@ -16,6 +17,23 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['role'] = user.role
         data['user_id'] = user.id
         return data
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Customize token payload here
+        profile_id = None
+        try:
+            profile = StudentProfile.objects.get(user=user)
+            profile_id = profile.id
+        except ObjectDoesNotExist:
+            pass
+
+        # Add profile_id to the token payload
+        token['profile_id'] = profile_id
+
+        return token
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -37,16 +55,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
     results = serializers.SerializerMethodField()
     cart = serializers.SerializerMethodField()
     transactions = serializers.SerializerMethodField()
+    user_details = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentProfile
         fields = [
             'id',
             'user',
+            'user_details',
             'results',
             'cart',
             'transactions'
         ]
+
+    def get_user_details(self, obj):
+        user_details = User.objects.filter(id=obj.user.id)
+        return UserSerializer(user_details, many=True, context=self.context).data
 
     def get_results(self, obj):
         results = Result.objects.filter(student=obj.user)
