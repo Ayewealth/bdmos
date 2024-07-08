@@ -94,6 +94,10 @@ urlpatterns = [
     path('cart/reduce/', views.ReduceFromCart.as_view(), name='reduce-from-cart'),
     path('cart/remove/', views.RemoveFromCartView.as_view(),
          name='remove-from-cart'),
+    path('create-order/', views.CreateOrderView.as_view(), name='create-order'),
+    path('order-callback/', views.OrderPaymentCallbackView.as_view(),
+         name='order-callback'),
+    path('orders/', views.OrdersListCreateApiView.as_view(), name="orders"),
 
     path('scratch_cards/', views.GenerateScratchCardView.as_view(),
          name='generate_scratch_card'),
@@ -115,4 +119,7 @@ urlpatterns = [
          name='send-teacher-application-email'),
     path('send-student-application-email/', views.SendStudentApplicationEmailView.as_view(),
          name='send-student-application-email'),
+
+    path('request-otp/', views.RequestOTPView.as_view(), name='request_otp'),
+    path('verify-otp/', views.VerifyOTPView.as_view(), name='verify_otp'),
 ]

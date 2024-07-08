@@ -565,6 +565,25 @@ class CartSerializer(serializers.ModelSerializer):
         return sum(item.get_total_price() for item in obj.items.all())
 
 
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['item', 'quantity', 'get_total_price']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    order_items = OrderItemSerializer(many=True, read_only=True)
+    user = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'status', 'created_at', 'order_items']
+
+
+class CreateOrderSerializer(serializers.Serializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+
 class ScratchCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScratchCard
@@ -708,3 +727,14 @@ class StudentApplicationSerializer(serializers.Serializer):
         max_length=255, required=False, allow_blank=True)
     passport = serializers.FileField(required=False)
     date_of_birth = serializers.DateField(required=False, allow_null=True)
+
+
+class OTPRequestSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=255)
+    old_password = serializers.CharField(max_length=128, write_only=True)
+
+
+class OTPVerificationSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=255)
+    otp = serializers.CharField(max_length=4)
+    new_password = serializers.CharField(max_length=128, write_only=True)

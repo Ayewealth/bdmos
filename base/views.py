@@ -24,8 +24,12 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 import logging
 import json
+from django.contrib.auth import authenticate
+from environ import Env  # type: ignore
 
 logger = logging.getLogger(__name__)
+env = Env()
+Env.read_env()
 
 # Create your views here.
 
@@ -56,6 +60,9 @@ def endpoints(request):
         "cart/add/",
         "cart/reduce/",
         "cart/remove/",
+        "orders/",
+        "create-order/",
+        "order-callback/",
         "scratch_cards/",
         "bills/",
         "bills/id/",
@@ -65,7 +72,9 @@ def endpoints(request):
         "transactions/status_type/",
         "student_passwords/",
         "send-teacher-application-email/",
-        "send-student-application-email/"
+        "send-student-application-email/",
+        "request-otp/",
+        "verify-otp/"
     ]
     return Response(data)
 
@@ -804,88 +813,6 @@ class SendTeacherApplicationEmailView(APIView):
 class SendStudentApplicationEmailView(APIView):
     def post(self, request, *args, **kwargs):
         email = request.GET.get("parents_email")
-        serializer = TeacherApplicationSerializer(data=request.data)
-        if serializer.is_valid():
-            data = serializer.validated_data
-            admin_email = settings.DEFAULT_FROM_EMAIL
-
-            subject = "New Teacher Application Submission"
-            from_email = email
-            to_email = admin_email
-
-            # Create email content
-            text_content = f"""
-                New teacher application received:
-                First Name: {data.get('first_name', 'N/A')}
-                Middle Name: {data.get('middle_name', 'N/A')}
-                Last Name: {data.get('last_name', 'N/A')}
-                Username: {data.get('username', 'N/A')}
-                Temporary Residence: {data.get('temporary_residence', 'N/A')}
-                Permanent Residence: {data.get('permanent_residence', 'N/A')}
-                State of Origin: {data.get('state_of_origin', 'N/A')}
-                City or Town: {data.get('city_or_town', 'N/A')}
-                Sex: {data.get('sex', 'N/A')}
-                Phone Number: {data.get('phone_number', 'N/A')}
-                Teacher Email: {data.get('teacher_email', 'N/A')}
-                Date of Birth: {data.get('date_of_birth', 'N/A')}
-                Religion: {data.get('religion', 'N/A')}
-                Disability: {data.get('disability', 'N/A')}
-                Marital Status: {data.get('maritial_status', 'N/A')}
-                Years of Experience: {data.get('years_of_experience', 'N/A')}
-                Computer Skills: {data.get('computer_skills', 'N/A')}
-                Disability Note: {data.get('disability_note', 'N/A')}
-                Teacher Speech: {data.get('teacher_speech', 'N/A')}
-            """
-
-            html_content = f"""
-                <html>
-                    <body>
-                        <p>New teacher application received:</p>
-                        <ul>
-                            <li><strong>First Name:</strong> {data.get('first_name', 'N/A')}</li>
-                            <li><strong>Middle Name:</strong> {data.get('middle_name', 'N/A')}</li>
-                            <li><strong>Last Name:</strong> {data.get('last_name', 'N/A')}</li>
-                            <li><strong>Username:</strong> {data.get('username', 'N/A')}</li>
-                            <li><strong>Temporary Residence:</strong> {data.get('temporary_residence', 'N/A')}</li>
-                            <li><strong>Permanent Residence:</strong> {data.get('permanent_residence', 'N/A')}</li>
-                            <li><strong>State of Origin:</strong> {data.get('state_of_origin', 'N/A')}</li>
-                            <li><strong>City or Town:</strong> {data.get('city_or_town', 'N/A')}</li>
-                            <li><strong>Sex:</strong> {data.get('sex', 'N/A')}</li>
-                            <li><strong>Phone Number:</strong> {data.get('phone_number', 'N/A')}</li>
-                            <li><strong>Teacher Email:</strong> {data.get('teacher_email', 'N/A')}</li>
-                            <li><strong>Date of Birth:</strong> {data.get('date_of_birth', 'N/A')}</li>
-                            <li><strong>Religion:</strong> {data.get('religion', 'N/A')}</li>
-                            <li><strong>Disability:</strong> {data.get('disability', 'N/A')}</li>
-                            <li><strong>Marital Status:</strong> {data.get('maritial_status', 'N/A')}</li>
-                            <li><strong>Years of Experience:</strong> {data.get('years_of_experience', 'N/A')}</li>
-                            <li><strong>Computer Skills:</strong> {data.get('computer_skills', 'N/A')}</li>
-                            <li><strong>Disability Note:</strong> {data.get('disability_note', 'N/A')}</li>
-                            <li><strong>Teacher Speech:</strong> {data.get('teacher_speech', 'N/A')}</li>
-                        </ul>
-                    </body>
-                </html>
-            """
-
-            # Create the email
-            msg = EmailMultiAlternatives(
-                subject, text_content, from_email, [to_email])
-            msg.attach_alternative(html_content, "text/html")
-
-            # Attach files
-            if request.FILES:
-                for field_name, file in request.FILES.items():
-                    msg.attach(file.name, file.read(), file.content_type)
-
-            # Send the email
-            msg.send()
-
-            return Response({"message": "Application submitted successfully and email sent to admin."}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class SendStudentApplicationEmailView(APIView):
-    def post(self, request, *args, **kwargs):
-        email = request.GET.get("parents_email")
         serializer = StudentApplicationSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.validated_data
@@ -959,3 +886,112 @@ class SendStudentApplicationEmailView(APIView):
 
             return Response({"message": "Application submitted successfully and email sent to admin."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RequestOTPView(generics.ListCreateAPIView):
+    def post(self, request, *args, **kwargs):
+        serializer = OTPRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            old_password = serializer.validated_data['old_password']
+            user = authenticate(username=username, password=old_password)
+            if user is not None:
+                # Generate OTP
+                otp_entry, created = PasswordResetOTP.objects.get_or_create(
+                    user=user, is_used=False)
+                if not created:
+                    otp_entry.generate_otp()
+                else:
+                    otp_entry.otp = ''.join(
+                        [str(random.randint(0, 9)) for _ in range(4)])
+                    otp_entry.save()
+
+                # Send OTP to user's email
+                send_mail(
+                    'Your OTP Code',
+                    f'Your OTP code is {otp_entry.otp}',
+                    'anwasiprince@gmail.com',
+                    [env("EMAIL_ADDRESS")],
+                    fail_silently=False,
+                )
+                return Response({"message": "OTP sent to your email."}, status=status.HTTP_200_OK)
+            return Response({"error": "Invalid username or password."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VerifyOTPView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = OTPVerificationSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            otp = serializer.validated_data['otp']
+            new_password = serializer.validated_data['new_password']
+
+            try:
+                user = User.objects.get(username=username)
+                otp_entry = PasswordResetOTP.objects.filter(
+                    user=user, otp=otp, is_used=False).first()
+
+                if otp_entry and otp_entry.is_valid():
+                    user.set_password(new_password)
+                    user.save()
+
+                    otp_entry.is_used = True
+                    otp_entry.save()
+
+                    return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)
+                return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+            except User.DoesNotExist:
+                return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OrdersListCreateApiView(generics.ListCreateAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user)
+
+
+class CreateOrderView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = CreateOrderSerializer(
+            data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = request.user
+            cart = Cart.objects.get(user=user)
+
+            if not cart.items.exists():
+                return Response({"message": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
+
+            order = Order.objects.create(user=user, status='pending')
+
+            for cart_item in cart.items.all():
+                OrderItem.objects.create(
+                    order=order,
+                    item=cart_item.item,
+                    quantity=cart_item.quantity
+                )
+
+            # Clear the cart after creating the order
+            cart.items.all().delete()
+
+            order_serializer = OrderSerializer(order)
+
+            return Response(order_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OrderPaymentCallbackView(APIView):
+    def post(self, request, *args, **kwargs):
+        order_id = request.data.get('order_id')
+        status = request.data.get('status')
+        try:
+            order = Order.objects.get(id=order_id)
+            if status == 'successful':
+                order.status = 'successful'
+                order.save()
+            return Response({"status": order.status}, status=status.HTTP_200_OK)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)

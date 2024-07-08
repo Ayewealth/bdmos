@@ -390,6 +390,36 @@ class CartItem(models.Model):
 
     def get_total_price(self):
         return self.quantity * self.item.price
+    
+
+class Order(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('successful', 'Successful'),
+        ('failed', 'Failed'),
+    )
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='orders')
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='pending', null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order #{self.id} by {self.user.username}"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name='order_items')
+    item = models.ForeignKey(Items, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.quantity} of {self.item.title} in Order #{self.order.id}"
+
+    def get_total_price(self):
+        return self.quantity * self.item.price
 
 
 class ScratchCard(models.Model):
@@ -441,3 +471,18 @@ class StudentPassword(models.Model):
 
     def __str__(self):
         return f"Password for {self.student.username}"
+
+
+class PasswordResetOTP(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=4)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def generate_otp(self):
+        self.otp = ''.join([str(random.randint(0, 9)) for _ in range(4)])
+        self.save()
+
+    def is_valid(self):
+        # Check if the OTP is still valid (e.g., within 10 minutes of creation)
+        return (timezone.now() - self.created_at).total_seconds() < 600
