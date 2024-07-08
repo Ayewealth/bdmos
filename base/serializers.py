@@ -32,6 +32,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Add profile_id to the token payload
         token['profile_id'] = profile_id
+        token['role'] = user.role
 
         return token
 
