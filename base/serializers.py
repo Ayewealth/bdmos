@@ -69,8 +69,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_user_details(self, obj):
-        user_details = User.objects.filter(id=obj.user.id)
-        return UserSerializer(user_details, many=True, context=self.context).data
+        user_details = Student.objects.filter(id=obj.user.id)
+        return StudentSerializer(user_details, many=True, context=self.context).data
 
     def get_results(self, obj):
         results = Result.objects.filter(student=obj.user)
