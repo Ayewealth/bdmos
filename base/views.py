@@ -888,7 +888,7 @@ class SendStudentApplicationEmailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RequestOTPView(generics.ListCreateAPIView):
+class RequestOTPView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = OTPRequestSerializer(data=request.data)
         if serializer.is_valid():
