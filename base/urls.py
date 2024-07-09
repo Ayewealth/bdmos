@@ -12,7 +12,8 @@ urlpatterns = [
     # Auth
     path("signin/", views.CustomTokenObtainPairView.as_view(),
          name="token_obtain_pair"),
-    path('token/refresh/', TokenRefreshView.as_view(), name="token_refresh"),
+    path('token/refresh/', views.CustomRefreshTokenView.as_view(),
+         name="token_refresh"),
 
     # App
     path("users/", views.UserListCreateApiView.as_view(), name="users"),

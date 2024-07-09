@@ -2,8 +2,10 @@ from .models import Payment
 from .models import Email
 from rest_framework import serializers
 from django.utils.dateformat import DateFormat
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer  # type: ignore
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer  # type: ignore
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import AuthenticationFailed
 
 from .models import *
 
@@ -35,6 +37,38 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['role'] = user.role
 
         return token
+
+
+class MyTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        # Extract the refresh token
+        refresh = RefreshToken(attrs['refresh'])
+
+        # Extract the user_id from the refresh token
+        user_id = refresh.get('user_id')
+        if not user_id:
+            raise AuthenticationFailed('Invalid token')
+
+        # Retrieve the user
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise AuthenticationFailed('User not found', code='user_not_found')
+
+        # Add custom claims
+        profile_id = None
+        try:
+            profile = StudentProfile.objects.get(user=user)
+            profile_id = profile.id
+        except ObjectDoesNotExist:
+            pass
+
+        data['profile_id'] = profile_id
+        data['role'] = user.role
+
+        return data
 
 
 class UserSerializer(serializers.ModelSerializer):
