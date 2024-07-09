@@ -936,7 +936,7 @@ class VerifyOTPView(APIView):
                 otp_entry = PasswordResetOTP.objects.filter(
                     user=user, otp=otp, is_used=False).first()
 
-                if otp_entry and otp_entry.is_valid():
+                if otp_entry:
                     user.set_password(new_password)
                     user.save()
 
