@@ -61,6 +61,8 @@ def endpoints(request):
         "cart/reduce/",
         "cart/remove/",
         "orders/",
+        "all_orders/",
+        "orders/status_type/",
         "create-order/",
         "order-callback/",
         "scratch_cards/",
@@ -705,9 +707,16 @@ def payment_callback(request):
 class AllPaymentsListApiView(generics.ListAPIView):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'user__username', 'created_at', 'amount', 'fee_type__name']
 
 
 class ListTransactionsPaymentView(APIView):
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'user__username', 'created_at', 'amount', 'fee_type__name']
+
     def get(self, request, *args, **kwargs):
         status_type = self.kwargs.get('status_type')
 
@@ -956,6 +965,35 @@ class OrdersListCreateApiView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
+
+
+class AllOrdersListApiView(generics.ListAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'created_at', 'user__username']
+
+
+class ListTransactionsOrderView(APIView):
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'created_at', 'user__username']
+
+    def get(self, request, *args, **kwargs):
+        status_type = self.kwargs.get('status_type')
+
+        if status_type == 'successful':
+            transactions = Order.objects.filter(status="Successful")
+        elif status_type == 'failed':
+            transactions = Order.objects.filter(status="Failed")
+        elif status_type == 'pending':
+            transactions = Order.objects.filter(status="Pending")
+        else:
+            return Response({"error": "Invalid status type."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = OrderSerializer(transactions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CreateOrderView(APIView):

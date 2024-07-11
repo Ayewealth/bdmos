@@ -99,6 +99,9 @@ urlpatterns = [
     path('order-callback/', views.OrderPaymentCallbackView.as_view(),
          name='order-callback'),
     path('orders/', views.OrdersListCreateApiView.as_view(), name="orders"),
+    path('all_orders/', views.AllOrdersListApiView.as_view(), name="all_orders"),
+    path('orders/<str:status_type>/',
+         views.ListTransactionsOrderView.as_view(), name='orders-status_type'),
 
     path('scratch_cards/', views.GenerateScratchCardView.as_view(),
          name='generate_scratch_card'),

@@ -122,6 +122,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class StudentSerializer(serializers.ModelSerializer):
     date_joined = serializers.SerializerMethodField()
+    class_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Student
@@ -143,6 +144,7 @@ class StudentSerializer(serializers.ModelSerializer):
             'religion',
             'disability',
             'student_class',
+            'class_name',
             'city_or_town',
             'previous_school',
             'disability_note',
@@ -156,6 +158,11 @@ class StudentSerializer(serializers.ModelSerializer):
 
     def get_date_joined(self, obj):
         return DateFormat(obj.date_joined).format('F j, Y')
+
+    def get_class_name(self, obj):
+        student_class = obj.student_class
+        serializer = ClassSerializer(instance=student_class, many=False)
+        return serializer.data
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -372,24 +379,6 @@ class SchemeSerializer(serializers.ModelSerializer):
         serializer = TermSerializer(
             instance=term, many=False)
         return serializer.data
-
-    def validate(self, data):
-        student_class = data.get('student_class')
-        term = data.get('term')
-        session = data.get('session')
-        date = data.get('date')
-
-        # If instance is present, exclude it from the validation query
-        if Scheme.objects.filter(
-            student_class=student_class,
-            term=term,
-            session=session,
-            date=date
-        ).exists():
-            raise serializers.ValidationError(
-                "A scheme for this class, term, session and date already exists.")
-
-        return data
 
 
 class SubjectResultSerializer(serializers.ModelSerializer):
@@ -627,10 +616,11 @@ class ScratchCardSerializer(serializers.ModelSerializer):
 class PaymentSerializer(serializers.ModelSerializer):
     session_name = serializers.SerializerMethodField()
     term_name = serializers.SerializerMethodField()
+    fee_type_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
-        fields = ['id', 'user', 'fee_type', 'amount', 'status',
+        fields = ['id', 'user', 'fee_type', 'fee_type_name', 'amount', 'status',
                   'transaction_id', 'link', 'session', 'session_name', 'term', 'term_name', 'created_at', 'updated_at']
         read_only_fields = ['id', 'user', 'status',
                             'transaction_id', 'link', 'created_at', 'updated_at']
@@ -645,6 +635,11 @@ class PaymentSerializer(serializers.ModelSerializer):
         term = obj.term
         serializer = TermSerializer(
             instance=term, many=False)
+        return serializer.data
+
+    def get_fee_type_name(self, obj):
+        fee_type = obj.fee_type
+        serializer = BillSerializer(instance=fee_type, many=False)
         return serializer.data
 
 
