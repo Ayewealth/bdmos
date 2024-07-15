@@ -390,7 +390,7 @@ class CartItem(models.Model):
 
     def get_total_price(self):
         return self.quantity * self.item.price
-    
+
 
 class Order(models.Model):
     STATUS_CHOICES = (

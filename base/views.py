@@ -26,6 +26,7 @@ import logging
 import json
 from django.contrib.auth import authenticate
 from environ import Env  # type: ignore
+from .filters import *
 
 logger = logging.getLogger(__name__)
 env = Env()
@@ -962,6 +963,9 @@ class VerifyOTPView(APIView):
 class OrdersListCreateApiView(generics.ListCreateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'created_at']
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
@@ -976,21 +980,21 @@ class AllOrdersListApiView(generics.ListAPIView):
 
 
 class ListTransactionsOrderView(APIView):
-    filter_backends = [filters.SearchFilter]
-    search_fields = [
-        'created_at', 'user__username']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['created_at', 'user__username']
 
-    def get(self, request, *args, **kwargs):
-        status_type = self.kwargs.get('status_type')
-
+    def get(self, request, status_type=None, *args, **kwargs):
         if status_type == 'successful':
-            transactions = Order.objects.filter(status="Successful")
+            transactions = Order.objects.filter(status="successful")
         elif status_type == 'failed':
-            transactions = Order.objects.filter(status="Failed")
+            transactions = Order.objects.filter(status="failed")
         elif status_type == 'pending':
-            transactions = Order.objects.filter(status="Pending")
+            transactions = Order.objects.filter(status="pending")
         else:
             return Response({"error": "Invalid status type."}, status=status.HTTP_400_BAD_REQUEST)
+
+        for backend in self.filter_backends:
+            transactions = backend().filter_queryset(request, transactions, self)
 
         serializer = OrderSerializer(transactions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

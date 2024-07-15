@@ -588,10 +588,24 @@ class CartSerializer(serializers.ModelSerializer):
         return sum(item.get_total_price() for item in obj.items.all())
 
 
+class ItemSerializerForOrder(serializers.ModelSerializer):
+    class Meta:
+        model = Items
+        fields = ['id', 'title']
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
+    item_name = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderItem
-        fields = ['item', 'quantity', 'get_total_price']
+        fields = ['item', 'item_name', 'quantity', 'get_total_price']
+
+    def get_item_name(self, obj):
+        item = obj.item
+        serializer = ItemSerializerForOrder(
+            instance=item, many=False)
+        return serializer.data
 
 
 class OrderSerializer(serializers.ModelSerializer):
