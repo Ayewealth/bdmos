@@ -621,6 +621,9 @@ class BillRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 class PaymentListCreateView(generics.ListCreateAPIView):
     queryset = Payment.objects.all()
     permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'user__username', 'created_at', 'amount', 'fee_type__name']
 
     def get_queryset(self):
         return Payment.objects.filter(user=self.request.user)
@@ -713,25 +716,35 @@ class AllPaymentsListApiView(generics.ListAPIView):
         'user__username', 'created_at', 'amount', 'fee_type__name']
 
 
-class ListTransactionsPaymentView(APIView):
-    filter_backends = [filters.SearchFilter]
-    search_fields = [
-        'user__username', 'created_at', 'amount', 'fee_type__name']
+class ListTransactionsPaymentView(generics.ListAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = TransactionsFilter
+    search_fields = ['user__username',
+                     'created_at', 'amount', 'fee_type__name']
 
-    def get(self, request, *args, **kwargs):
+    def get_queryset(self):
         status_type = self.kwargs.get('status_type')
-
         if status_type == 'approved':
-            transactions = Payment.objects.filter(status="Approved")
+            return Payment.objects.filter(status="Approved")
         elif status_type == 'declined':
-            transactions = Payment.objects.filter(status="Declined")
+            return Payment.objects.filter(status="Declined")
         elif status_type == 'pending':
-            transactions = Payment.objects.filter(status="Pending")
+            return Payment.objects.filter(status="Pending")
         else:
-            return Response({"error": "Invalid status type."}, status=status.HTTP_400_BAD_REQUEST)
+            return Payment.objects.none()
 
-        serializer = PaymentSerializer(transactions, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class StudentPasswordListCreateApiView(generics.ListCreateAPIView):
@@ -979,25 +992,34 @@ class AllOrdersListApiView(generics.ListAPIView):
         'created_at', 'user__username']
 
 
-class ListTransactionsOrderView(APIView):
+class ListTransactionsOrderView(generics.ListAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = OrderFilter
     search_fields = ['created_at', 'user__username']
 
-    def get(self, request, status_type=None, *args, **kwargs):
+    def get_queryset(self):
+        status_type = self.kwargs.get('status_type')
         if status_type == 'successful':
-            transactions = Order.objects.filter(status="successful")
+            return Order.objects.filter(status="successful")
         elif status_type == 'failed':
-            transactions = Order.objects.filter(status="failed")
+            return Order.objects.filter(status="failed")
         elif status_type == 'pending':
-            transactions = Order.objects.filter(status="pending")
+            return Order.objects.filter(status="pending")
         else:
-            return Response({"error": "Invalid status type."}, status=status.HTTP_400_BAD_REQUEST)
+            return Order.objects.none()
 
-        for backend in self.filter_backends:
-            transactions = backend().filter_queryset(request, transactions, self)
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
 
-        serializer = OrderSerializer(transactions, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class CreateOrderView(APIView):

@@ -640,21 +640,13 @@ class PaymentSerializer(serializers.ModelSerializer):
                             'transaction_id', 'link', 'created_at', 'updated_at']
 
     def get_session_name(self, obj):
-        session = obj.session
-        serializer = SessionSerializer(
-            instance=session, many=False)
-        return serializer.data
+        return obj.session.name if obj.session else None
 
     def get_term_name(self, obj):
-        term = obj.term
-        serializer = TermSerializer(
-            instance=term, many=False)
-        return serializer.data
+        return obj.term.name if obj.term else None
 
     def get_fee_type_name(self, obj):
-        fee_type = obj.fee_type
-        serializer = BillSerializer(instance=fee_type, many=False)
-        return serializer.data
+        return obj.fee_type.name if obj.fee_type else None
 
 
 class BillSerializer(serializers.ModelSerializer):
